@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Store',
-      home: SplashOne(),
+      home: const SplashOne(),
       debugShowCheckedModeBanner: false,
     );
   }
