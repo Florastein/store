@@ -22,14 +22,14 @@ class _AccountCardState extends State<AccountCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.sizeOf(context).width * 0.80,
-      height: 200,
+      width: MediaQuery.sizeOf(context).width * 0.95,
+      height: 220,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -60,7 +60,8 @@ class _AccountCardState extends State<AccountCard> {
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.gray,
+                      color: AppColors.labelPrimary,
+                      letterSpacing: 0.38,
                     ),
                   ),
                 ],

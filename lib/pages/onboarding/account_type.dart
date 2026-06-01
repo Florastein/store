@@ -25,16 +25,21 @@ class _AccountTypeState extends State<AccountType> {
               Text(
                 'Choose Account Type',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: 30,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 0.38,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Text(
                 'Set up your account by selecting the type that best describes you.',
-                style: GoogleFonts.poppins(fontSize: 16, color: AppColors.gray),
+                style: GoogleFonts.poppins(
+                  letterSpacing: 0.38,
+                  fontSize: 16,
+                  color: AppColors.labelPrimary,
+                ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 64),
               AccountCard(
                 accountType: 'Customer',
                 description:
@@ -45,7 +50,7 @@ class _AccountTypeState extends State<AccountType> {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               AccountCard(
                 accountType: 'Store Owner',
                 description: 'List your products and manage your store.',
@@ -55,7 +60,6 @@ class _AccountTypeState extends State<AccountType> {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
