@@ -163,6 +163,9 @@ class _OnboardOneState extends State<OnboardOne> {
                   text: _currentPage == _slides.length - 1
                       ? "Get Started"
                       : "Next",
+                  color: AppColors.buttonPrimary,
+                  width: MediaQuery.sizeOf(context).width * 0.9,
+                  height: 62,
                   onPressed: () {
                     if (_currentPage < _slides.length - 1) {
                       _pageController.nextPage(
