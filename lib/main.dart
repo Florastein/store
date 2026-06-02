@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:store/pages/auth/registration_complete.dart';
-import 'package:store/pages/auth/verify_phone.dart';
+import 'package:store/pages/splash/splash_one.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +13,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Store',
-      home: const RegistrationComplete(),
+      home: const SplashOne(),
       debugShowCheckedModeBanner: false,
     );
   }

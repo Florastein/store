@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:store/pages/auth/create_password.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 import 'package:store/pages/auth/add_phone.dart';
@@ -53,7 +54,7 @@ class _CreateAccountState extends State<CreateAccount> {
     if (_formKey.currentState!.validate()) {
       Navigator.of(
         context,
-      ).push(CupertinoPageRoute(builder: (context) => const AddPhone()));
+      ).push(MaterialPageRoute(builder: (context) => const CreatePassword()));
     }
   }
 
@@ -126,7 +127,7 @@ class _CreateAccountState extends State<CreateAccount> {
                             focusNode: _nameFocusNode,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.normal,
                               color: AppColors.labelPrimary,
                             ),
                             decoration: _buildInputDecoration(
@@ -171,7 +172,7 @@ class _CreateAccountState extends State<CreateAccount> {
                             keyboardType: TextInputType.emailAddress,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.normal,
                               color: AppColors.labelPrimary,
                             ),
                             decoration: _buildInputDecoration(

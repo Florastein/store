@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:store/pages/auth/shop/create_account.dart';
 import 'package:store/theme/app_colors.dart';
-import 'package:store/widgets/acctount_cards.dart';
+import 'package:store/widgets/account_cards.dart';
 import 'package:store/pages/auth/create_account.dart';
 
 class AccountType extends StatefulWidget {
@@ -53,7 +54,7 @@ class _AccountTypeState extends State<AccountType> {
                 ),
                 onTap: () {
                   Navigator.of(context).push(
-                    CupertinoPageRoute(
+                    MaterialPageRoute(
                       builder: (context) => const CreateAccount(),
                     ),
                   );
@@ -70,8 +71,8 @@ class _AccountTypeState extends State<AccountType> {
                 ),
                 onTap: () {
                   Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => const CreateAccount(),
+                    MaterialPageRoute(
+                      builder: (context) => const CreateShopAccount(),
                     ),
                   );
                 },

@@ -174,7 +174,7 @@ class _OnboardOneState extends State<OnboardOne> {
                       );
                     } else {
                       Navigator.of(context).pushReplacement(
-                        CupertinoPageRoute(
+                        MaterialPageRoute(
                           builder: (context) => const AccountType(),
                         ),
                       );

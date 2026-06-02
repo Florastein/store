@@ -62,15 +62,39 @@ class _AddPhoneState extends State<AddPhone> {
     setState(() {});
   }
 
-  String _flagForPhoneNumber(String phoneNumber) {
-    final digitsOnly = phoneNumber.replaceAll(RegExp(r'\D'), '');
+  String _normalizedDialString(String phoneNumber) {
+    final cleaned = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+
+    if (cleaned.startsWith('+')) {
+      return cleaned.substring(1);
+    }
+
+    if (cleaned.startsWith('00')) {
+      return cleaned.substring(2);
+    }
+
+    return cleaned;
+  }
+
+  String? _countryPrefixForPhoneNumber(String phoneNumber) {
+    final normalizedPhoneNumber = _normalizedDialString(phoneNumber);
     final prefixes = _countryFlagsByPrefix.keys.toList()
       ..sort((a, b) => b.length.compareTo(a.length));
 
     for (final prefix in prefixes) {
-      if (digitsOnly.startsWith(prefix)) {
-        return _countryFlagsByPrefix[prefix]!;
+      if (normalizedPhoneNumber.startsWith(prefix)) {
+        return prefix;
       }
+    }
+
+    return null;
+  }
+
+  String _flagForPhoneNumber(String phoneNumber) {
+    final prefix = _countryPrefixForPhoneNumber(phoneNumber);
+
+    if (prefix != null) {
+      return _countryFlagsByPrefix[prefix]!;
     }
 
     return '🌍';
@@ -185,7 +209,7 @@ class _AddPhoneState extends State<AddPhone> {
                           onPressed: () {
                             Navigator.of(context).pop();
                             Navigator.of(context).push(
-                              CupertinoPageRoute(
+                              MaterialPageRoute(
                                 builder: (context) => const VerifyPhone(),
                               ),
                             );

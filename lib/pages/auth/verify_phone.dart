@@ -19,6 +19,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
   late final List<FocusNode> _focusNodes;
   int _secondsRemaining = 10;
   Timer? _timer;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -35,6 +36,20 @@ class _VerifyPhoneState extends State<VerifyPhone> {
 
   void _onFocusChanged() {
     setState(() {});
+  }
+
+  void _trySubmitIfComplete() {
+    if (_isSubmitting) return;
+    final code = _controllers.map((c) => c.text).join();
+    if (code.length == _controllers.length &&
+        code.runes.every((r) => r >= 48 && r <= 57)) {
+      _isSubmitting = true;
+      FocusManager.instance.primaryFocus?.unfocus();
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const RegistrationComplete()),
+      );
+    }
   }
 
   @override
@@ -109,7 +124,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     Navigator.of(context).push(
-      CupertinoPageRoute(builder: (context) => const RegistrationComplete()),
+      MaterialPageRoute(builder: (context) => const RegistrationComplete()),
     );
   }
 
@@ -182,6 +197,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
 
               _focusNodes.last.unfocus();
               setState(() {});
+              _trySubmitIfComplete();
               return;
             }
 
@@ -201,6 +217,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
             }
 
             setState(() {});
+            _trySubmitIfComplete();
           },
         ),
       ),

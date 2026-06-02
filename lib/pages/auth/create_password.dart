@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:store/pages/auth/add_phone.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 
@@ -17,6 +19,8 @@ class _CreatePasswordState extends State<CreatePassword> {
   final _verifyPasswordController = TextEditingController();
   final _passwordFocusNode = FocusNode();
   final _verifyPasswordFocusNode = FocusNode();
+  bool _isPasswordObscured = true;
+  bool _isVerifyPasswordObscured = true;
 
   @override
   void initState() {
@@ -50,14 +54,9 @@ class _CreatePasswordState extends State<CreatePassword> {
 
   void _onNextPressed() {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Account registration complete!',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: AppColors.success,
-        ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AddPhone()),
       );
     }
   }
@@ -240,7 +239,7 @@ class _CreatePasswordState extends State<CreatePassword> {
                           child: TextFormField(
                             controller: _passwordController,
                             focusNode: _passwordFocusNode,
-                            obscureText: true,
+                            obscureText: _isPasswordObscured,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -250,6 +249,13 @@ class _CreatePasswordState extends State<CreatePassword> {
                               hintText: '',
                               controller: _passwordController,
                               focusNode: _passwordFocusNode,
+                              isPasswordField: true,
+                              isObscured: _isPasswordObscured,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _isPasswordObscured = !_isPasswordObscured;
+                                });
+                              },
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -291,7 +297,7 @@ class _CreatePasswordState extends State<CreatePassword> {
                           child: TextFormField(
                             controller: _verifyPasswordController,
                             focusNode: _verifyPasswordFocusNode,
-                            obscureText: true,
+                            obscureText: _isVerifyPasswordObscured,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -301,6 +307,14 @@ class _CreatePasswordState extends State<CreatePassword> {
                               hintText: '',
                               controller: _verifyPasswordController,
                               focusNode: _verifyPasswordFocusNode,
+                              isPasswordField: true,
+                              isObscured: _isVerifyPasswordObscured,
+                              onToggleVisibility: () {
+                                setState(() {
+                                  _isVerifyPasswordObscured =
+                                      !_isVerifyPasswordObscured;
+                                });
+                              },
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -386,6 +400,9 @@ class _CreatePasswordState extends State<CreatePassword> {
     required String hintText,
     required TextEditingController controller,
     required FocusNode focusNode,
+    bool isPasswordField = false,
+    bool isObscured = true,
+    VoidCallback? onToggleVisibility,
   }) {
     return InputDecoration(
       hintText: hintText,
@@ -399,15 +416,34 @@ class _CreatePasswordState extends State<CreatePassword> {
       filled: true,
       fillColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      suffixIcon: (focusNode.hasFocus && controller.text.isNotEmpty)
-          ? GestureDetector(
-              onTap: () {
-                controller.clear();
-              },
-              child: const Icon(
-                Icons.cancel,
-                color: Color(0xFFBCBCBC),
-                size: 20,
+      suffixIcon: (focusNode.hasFocus || controller.text.isNotEmpty)
+          ? Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (controller.text.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        controller.clear();
+                      },
+                      child: const Icon(
+                        Icons.cancel,
+                        color: Color(0xFFBCBCBC),
+                        size: 20,
+                      ),
+                    ),
+                  if (isPasswordField) const SizedBox(width: 8),
+                  if (isPasswordField)
+                    GestureDetector(
+                      onTap: onToggleVisibility,
+                      child: Icon(
+                        isObscured ? Icons.visibility_off : Icons.visibility,
+                        color: const Color(0xFFBCBCBC),
+                        size: 20,
+                      ),
+                    ),
+                ],
               ),
             )
           : null,

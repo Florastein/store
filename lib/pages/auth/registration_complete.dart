@@ -3,8 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:store/pages/customer/dashboard.dart';
 import 'package:store/theme/app_colors.dart';
-import 'package:store/pages/auth/create_password.dart';
 
 class RegistrationComplete extends StatefulWidget {
   const RegistrationComplete({super.key});
@@ -36,8 +36,9 @@ class _RegistrationCompleteState extends State<RegistrationComplete> {
           return;
         }
 
-        Navigator.of(context).pushReplacement(
-          CupertinoPageRoute(builder: (context) => const CreatePassword()),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const CustomerDashboard()),
+          (route) => false,
         );
       },
     );

@@ -49,7 +49,7 @@ class _SplashOneState extends State<SplashOne>
 
     _hasNavigated = true;
     Navigator.of(context).pushReplacement(
-      CupertinoPageRoute<void>(builder: (context) => const SplashTwo()),
+      MaterialPageRoute<void>(builder: (context) => const SplashTwo()),
     );
   }
 
