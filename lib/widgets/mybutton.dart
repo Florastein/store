@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:store/theme/app_colors.dart';
 
 class MyButton extends StatefulWidget {
   MyButton({

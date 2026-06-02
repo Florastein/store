@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:store/pages/auth/create_password.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
-import 'package:store/pages/auth/add_phone.dart';
+import 'package:store/pages/auth/login/login.dart';
 
 class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
@@ -210,14 +210,9 @@ class _CreateAccountState extends State<CreateAccount> {
 
                             GestureDetector(
                               onTap: () {
-                                // Navigate to Login
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Navigate to Login page',
-                                      style: GoogleFonts.poppins(),
-                                    ),
-                                    backgroundColor: AppColors.primary,
+                                Navigator.of(context).pushReplacement(
+                                  CupertinoPageRoute(
+                                    builder: (context) => const Login(),
                                   ),
                                 );
                               },
