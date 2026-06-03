@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 
 class StockPage extends StatefulWidget {
@@ -78,6 +79,55 @@ class _StockPageState extends State<StockPage> {
       image: 'https://via.placeholder.com/120?text=Vanish',
       status: StockStatus.normal,
     ),
+    StockItem(
+      id: 10,
+      name: 'Colgate',
+      quantity: 0,
+      image: 'https://via.placeholder.com/120?text=Colgate',
+      status: StockStatus.outOfStock,
+    ),
+    StockItem(
+      id: 11,
+      name: 'Dove',
+      quantity: 5,
+      image: 'https://via.placeholder.com/120?text=Dove',
+      status: StockStatus.lowStock,
+    ),
+    StockItem(
+      id: 12,
+      name: 'Lifebuoy',
+      quantity: 0,
+      image: 'https://via.placeholder.com/120?text=Lifebuoy',
+      status: StockStatus.outOfStock,
+    ),
+    StockItem(
+      id: 13,
+      name: 'Sunsilk',
+      quantity: 25,
+      image: 'https://via.placeholder.com/120?text=Sunsilk',
+      status: StockStatus.normal,
+    ),
+    StockItem(
+      id: 14,
+      name: 'Head & Shoulders',
+      quantity: 0,
+      image: 'https://via.placeholder.com/120?text=H&S',
+      status: StockStatus.outOfStock,
+    ),
+    StockItem(
+      id: 15,
+      name: 'Pantene',
+      quantity: 10,
+      image: 'https://via.placeholder.com/120?text=Pantene',
+      status: StockStatus.lowStock,
+    ),
+    StockItem(
+      id: 16,
+      name: 'Fair & Lovely',
+      quantity: 0,
+      image: 'https://via.placeholder.com/120?text=F&L',
+      status: StockStatus.outOfStock,
+    ),
   ];
 
   @override
@@ -135,7 +185,10 @@ class _StockPageState extends State<StockPage> {
                         color: const Color(0xFF8E8E93),
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       suffixIcon: Padding(
                         padding: const EdgeInsets.all(12),
                         child: HugeIcon(
@@ -152,9 +205,17 @@ class _StockPageState extends State<StockPage> {
               // Filter buttons
               Row(
                 children: [
-                  _buildFilterButton('Filter', 'filter', _selectedFilter == 'filter'),
+                  _buildFilterButton(
+                    'Filter',
+                    'filter',
+                    _selectedFilter == 'filter',
+                  ),
                   const SizedBox(width: 16),
-                  _buildFilterButton('All stock', 'all', _selectedFilter == 'all'),
+                  _buildFilterButton(
+                    'All stock',
+                    'all',
+                    _selectedFilter == 'all',
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -176,12 +237,13 @@ class _StockPageState extends State<StockPage> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 0.75,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.75,
+                          ),
                       itemCount: _products.length,
                       itemBuilder: (context, index) {
                         return _buildProductCard(_products[index]);
@@ -270,9 +332,7 @@ class _StockPageState extends State<StockPage> {
                         ),
                       ),
                       if (product.status != StockStatus.normal)
-                        Container(
-                          color: Colors.white.withOpacity(0.4),
-                        ),
+                        Container(color: Colors.white.withOpacity(0.4)),
                     ],
                   ),
                 ),
@@ -377,22 +437,4 @@ class _StockPageState extends State<StockPage> {
       ),
     );
   }
-}
-
-enum StockStatus { normal, lowStock, outOfStock }
-
-class StockItem {
-  final int id;
-  final String name;
-  final int quantity;
-  final String image;
-  final StockStatus status;
-
-  StockItem({
-    required this.id,
-    required this.name,
-    required this.quantity,
-    required this.image,
-    required this.status,
-  });
 }

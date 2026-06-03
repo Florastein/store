@@ -44,45 +44,98 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-
-      body: IndexedStack(index: _selectedNavIndex, children: _pages),
-
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(56),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              height: 88,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.52),
-                borderRadius: BorderRadius.circular(56),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
-                    blurRadius: 30,
-                    offset: const Offset(0, 14),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.40),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: List.generate(_navItems.length, (index) {
-                  final item = _navItems[index];
-                  return _buildNavItem(item: item, index: index);
-                }),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: IndexedStack(index: _selectedNavIndex, children: _pages),
+          ),
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 12,
+            child: SafeArea(
+              top: false,
+              child: _CustomerBottomNavBar(
+                items: _navItems,
+                selectedIndex: _selectedNavIndex,
+                onSelected: (index) {
+                  setState(() {
+                    _selectedNavIndex = index;
+                  });
+                },
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomerBottomNavBar extends StatelessWidget {
+  const _CustomerBottomNavBar({
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<_CustomerNavItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(56),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          height: 88,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.36),
+            borderRadius: BorderRadius.circular(56),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.56),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 30,
+                offset: const Offset(0, 14),
+              ),
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.26),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final activeItemWidth = constraints.maxWidth / items.length;
+
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 380),
+                    curve: Curves.easeOutBack,
+                    left: activeItemWidth * selectedIndex,
+                    top: 0,
+                    bottom: 0,
+                    width: activeItemWidth,
+                    child: const _CustomerNavActiveIndicator(),
+                  ),
+                  Row(
+                    children: List.generate(items.length, (index) {
+                      final item = items[index];
+                      return _buildNavItem(item: item, index: index);
+                    }),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -90,7 +143,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   }
 
   Widget _buildNavItem({required _CustomerNavItem item, required int index}) {
-    final isSelected = _selectedNavIndex == index;
+    final isSelected = selectedIndex == index;
 
     return Expanded(
       child: Material(
@@ -100,84 +153,90 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           splashColor: AppColors.navigationActive.withValues(alpha: 0.08),
           highlightColor: Colors.white.withValues(alpha: 0.18),
           onTap: () {
-            setState(() {
-              _selectedNavIndex = index;
-            });
+            onSelected(index);
           },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Colors.white.withValues(alpha: 0.56)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(48),
-              border: Border.all(
-                color: isSelected
-                    ? Colors.white.withValues(alpha: 0.86)
-                    : Colors.transparent,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.navigationActive.withValues(
-                          alpha: 0.12,
-                        ),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) {
-                    final scale = Tween<double>(
-                      begin: 0.88,
-                      end: 1.0,
-                    ).animate(animation);
+            scale: isSelected ? 1.04 : 1,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              offset: isSelected ? const Offset(0, -0.04) : Offset.zero,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 260),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      final scale = Tween<double>(
+                        begin: 0.88,
+                        end: 1.0,
+                      ).animate(animation);
 
-                    return FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(scale: scale, child: child),
-                    );
-                  },
-                  child: HugeIcon(
-                    key: ValueKey<String>('icon-$index-$isSelected'),
-                    icon: item.icon,
-                    size: isSelected ? 30 : 28,
-                    color: isSelected
-                        ? AppColors.navigationActive
-                        : const Color(0xFF4B5563),
-                    strokeWidth: 1.8,
+                      return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(scale: scale, child: child),
+                      );
+                    },
+                    child: HugeIcon(
+                      key: ValueKey<String>('icon-$index-$isSelected'),
+                      icon: item.icon,
+                      size: isSelected ? 30 : 28,
+                      color: isSelected
+                          ? AppColors.navigationActive
+                          : const Color(0xFF4B5563),
+                      strokeWidth: 1.8,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? AppColors.navigationActive
-                        : const Color(0xFF4B5563),
+                  const SizedBox(height: 4),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: isSelected
+                          ? AppColors.navigationActive
+                          : const Color(0xFF4B5563),
+                    ),
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CustomerNavActiveIndicator extends StatelessWidget {
+  const _CustomerNavActiveIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(48),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navigationActive.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
     );
   }
