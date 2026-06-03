@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:store/theme/app_colors.dart';
 
-class CustomerNotificationPage extends StatelessWidget {
+class CustomerNotificationPage extends StatefulWidget {
   const CustomerNotificationPage({super.key});
+
+  @override
+  State<CustomerNotificationPage> createState() =>
+      _CustomerNotificationPageState();
+}
+
+class _CustomerNotificationPageState extends State<CustomerNotificationPage> {
+  bool _allRead = false;
+  bool _messagesDeleted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,45 +54,107 @@ class CustomerNotificationPage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
+              if (!_messagesDeleted)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (!_allRead)
+                      Text(
+                        'ALL MESSAGES',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF5E5E5E),
+                        ),
+                      ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          if (_allRead && !_messagesDeleted) {
+                            // Delete all messages
+                            _messagesDeleted = true;
+                          } else if (!_allRead && !_messagesDeleted) {
+                            // Mark all as read
+                            _allRead = true;
+                          }
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor:
+                            _allRead ? Colors.red : AppColors.navigationActive,
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        _allRead ? 'Delete all' : 'Read all',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: _allRead ? Colors.red : AppColors.navigationActive,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              
               const SizedBox(height: 18),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.navigationActive,
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Read all',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.navigationActive,
+              const _DashedDivider(),
+              const SizedBox(height: 18),
+              if (_messagesDeleted)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inbox_outlined,
+                          size: 64,
+                          color: const Color(0xFFD0D0D0),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Notifications',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFB9B9B9),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'You\'re all caught up! 🎉',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: const Color(0xFFD0D0D0),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const _DashedDivider(),
-              const SizedBox(height: 18),
-              _NotificationItem(
-                title: 'Hurrah 🎉',
-                message:
-                    'Your items are already out of stock with the past few days. Congratulations on your product selling faster.',
-              ),
-              const SizedBox(height: 18),
-              const _DashedDivider(),
-              const SizedBox(height: 18),
-              _NotificationItem(
-                title: 'Low on stock ❗',
-                message:
-                    'Some of your fast selling products are low on stock please check and restock',
-              ),
-              const SizedBox(height: 18),
-              const _DashedDivider(),
+                )
+              else ...[
+                if (!_messagesDeleted)
+                  _NotificationItem(
+                    title: 'Hurrah 🎉',
+                    message:
+                        'Your items are already out of stock with the past few days. Congratulations on your product selling faster.',
+                    isRead: _allRead,
+                  ),
+                if (!_messagesDeleted) const SizedBox(height: 18),
+                if (!_messagesDeleted) const _DashedDivider(),
+                if (!_messagesDeleted) const SizedBox(height: 18),
+                if (!_messagesDeleted)
+                  _NotificationItem(
+                    title: 'Low on stock ❗',
+                    message:
+                        'Some of your fast selling products are low on stock please check and restock',
+                    isRead: _allRead,
+                  ),
+                if (!_messagesDeleted) const SizedBox(height: 18),
+                if (!_messagesDeleted) const _DashedDivider(),
+              ]
             ],
           ),
         ),
@@ -93,10 +164,15 @@ class CustomerNotificationPage extends StatelessWidget {
 }
 
 class _NotificationItem extends StatelessWidget {
-  const _NotificationItem({required this.title, required this.message});
+  const _NotificationItem({
+    required this.title,
+    required this.message,
+    this.isRead = false,
+  });
 
   final String title;
   final String message;
+  final bool isRead;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +184,7 @@ class _NotificationItem extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF2F2F2F),
+            color: isRead ? const Color(0xFFB9B9B9) : const Color(0xFF2F2F2F),
           ),
         ),
         const SizedBox(height: 10),
@@ -117,7 +193,7 @@ class _NotificationItem extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 13.5,
             height: 1.45,
-            color: const Color(0xFF5E5E5E),
+            color: isRead ? const Color(0xFFD0D0D0) : const Color(0xFF5E5E5E),
           ),
         ),
       ],

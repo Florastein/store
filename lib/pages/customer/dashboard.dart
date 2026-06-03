@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:store/pages/customer/overview.dart';
+import 'package:store/pages/customer/stock.dart';
 import 'package:store/theme/app_colors.dart';
 
 class CustomerDashboard extends StatefulWidget {
@@ -35,7 +36,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   late final List<Widget> _pages = [
     CustomerOverview(),
     const _PlaceholderPage(title: 'Checkout'),
-    const _PlaceholderPage(title: 'Stock'),
+    const StockPage(),
     const _PlaceholderPage(title: 'Settings'),
   ];
 
