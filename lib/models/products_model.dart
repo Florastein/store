@@ -7,6 +7,9 @@ class StockItem {
     required this.quantity,
     required this.image,
     required this.status,
+    this.price,
+    this.expiryDate,
+    this.description,
   });
 
   final int id;
@@ -14,6 +17,9 @@ class StockItem {
   final int quantity;
   final String image;
   final StockStatus status;
+  final double? price;
+  final DateTime? expiryDate;
+  final String? description;
 
   StockItem copyWith({
     int? id,
@@ -21,6 +27,9 @@ class StockItem {
     int? quantity,
     String? image,
     StockStatus? status,
+    double? price,
+    DateTime? expiryDate,
+    String? description,
   }) {
     return StockItem(
       id: id ?? this.id,
@@ -28,6 +37,9 @@ class StockItem {
       quantity: quantity ?? this.quantity,
       image: image ?? this.image,
       status: status ?? this.status,
+      price: price ?? this.price,
+      expiryDate: expiryDate ?? this.expiryDate,
+      description: description ?? this.description,
     );
   }
 
@@ -38,6 +50,10 @@ class StockItem {
       quantity: json['quantity'] as int,
       image: json['image'] as String,
       status: StockStatus.values.byName(json['status'] as String),
+      price: json['price'] as double?,
+      expiryDate:
+          json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : null,
+      description: json['description'] as String?,
     );
   }
 
@@ -48,6 +64,9 @@ class StockItem {
       'quantity': quantity,
       'image': image,
       'status': status.name,
+      'price': price,
+      'expiryDate': expiryDate?.toIso8601String(),
+      'description': description,
     };
   }
 }
