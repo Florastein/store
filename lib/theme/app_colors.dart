@@ -16,6 +16,7 @@ class AppColors {
   static const Color backgroundColor = Color(0xFFFAF8F5);
   static const Color white = Color(0xFFFFFFFF);
   static const Color blue = Color(0xFF155DFC);
+  static const Color navigationActive = Color(0xFFFF6900);
   static Color textTetiary = Color(0xFF3C3C43).withValues(alpha: 0.3);
 
   // Semantic Status Colors (Highly curated to stay premium)

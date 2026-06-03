@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:store/pages/customer/notification_page.dart';
 import 'package:store/theme/app_colors.dart';
 
 class CustomerOverview extends StatefulWidget {
@@ -53,7 +54,7 @@ class _CustomerOverviewState extends State<CustomerOverview> {
                           'Davv',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: const Color(0xFFFF6900),
+                            color: AppColors.navigationActive,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -64,7 +65,11 @@ class _CustomerOverviewState extends State<CustomerOverview> {
                 const Spacer(),
                 IconButton(
                   onPressed: () {
-                    // Open notifications
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const CustomerNotificationPage(),
+                      ),
+                    );
                   },
                   icon: HugeIcon(
                     icon: HugeIcons.strokeRoundedNotification01,

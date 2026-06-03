@@ -78,79 +78,102 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               child: Row(
                 children: List.generate(_navItems.length, (index) {
                   final item = _navItems[index];
-                  final isSelected = _selectedNavIndex == index;
-
-                  return Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(48),
-                        splashColor: AppColors.blue.withValues(alpha: 0.08),
-                        highlightColor: Colors.white.withValues(alpha: 0.18),
-                        onTap: () {
-                          setState(() {
-                            _selectedNavIndex = index;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOutCubic,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white.withValues(alpha: 0.56)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(48),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.86)
-                                  : Colors.transparent,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.blue.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              HugeIcon(
-                                icon: item.icon,
-                                size: 28,
-                                color: isSelected
-                                    ? AppColors.blue
-                                    : const Color(0xFF4B5563),
-                                strokeWidth: 1.8,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: isSelected
-                                      ? AppColors.blue
-                                      : const Color(0xFF4B5563),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildNavItem(item: item, index: index);
                 }),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({required _CustomerNavItem item, required int index}) {
+    final isSelected = _selectedNavIndex == index;
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(48),
+          splashColor: AppColors.navigationActive.withValues(alpha: 0.08),
+          highlightColor: Colors.white.withValues(alpha: 0.18),
+          onTap: () {
+            setState(() {
+              _selectedNavIndex = index;
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? Colors.white.withValues(alpha: 0.56)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(48),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.86)
+                    : Colors.transparent,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.navigationActive.withValues(
+                          alpha: 0.12,
+                        ),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    final scale = Tween<double>(
+                      begin: 0.88,
+                      end: 1.0,
+                    ).animate(animation);
+
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: scale, child: child),
+                    );
+                  },
+                  child: HugeIcon(
+                    key: ValueKey<String>('icon-$index-$isSelected'),
+                    icon: item.icon,
+                    size: isSelected ? 30 : 28,
+                    color: isSelected
+                        ? AppColors.navigationActive
+                        : const Color(0xFF4B5563),
+                    strokeWidth: 1.8,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? AppColors.navigationActive
+                        : const Color(0xFF4B5563),
+                  ),
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
