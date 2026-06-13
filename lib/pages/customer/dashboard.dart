@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:store/pages/customer/checkout.dart';
 import 'package:store/pages/customer/overview.dart';
 import 'package:store/pages/customer/stock.dart';
 import 'package:store/theme/app_colors.dart';
@@ -35,7 +36,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
   late final List<Widget> _pages = [
     CustomerOverview(),
-    const _PlaceholderPage(title: 'Checkout'),
+    CheckoutScreen(),
     const StockPage(),
     const _PlaceholderPage(title: 'Settings'),
   ];
