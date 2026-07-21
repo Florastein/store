@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
@@ -97,9 +96,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             },
                           ),
                           if (widget.product.status != StockStatus.normal)
-                            Container(
-                              color: Colors.white.withOpacity(0.3),
-                            ),
+                            Container(color: Colors.white.withOpacity(0.3)),
                         ],
                       ),
                     ),

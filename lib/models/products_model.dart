@@ -7,6 +7,7 @@ class StockItem {
     required this.quantity,
     required this.image,
     required this.status,
+    this.barcode,
     this.price,
     this.expiryDate,
     this.description,
@@ -17,6 +18,7 @@ class StockItem {
   final int quantity;
   final String image;
   final StockStatus status;
+  final String? barcode;
   final double? price;
   final DateTime? expiryDate;
   final String? description;
@@ -27,6 +29,7 @@ class StockItem {
     int? quantity,
     String? image,
     StockStatus? status,
+    String? barcode,
     double? price,
     DateTime? expiryDate,
     String? description,
@@ -37,6 +40,7 @@ class StockItem {
       quantity: quantity ?? this.quantity,
       image: image ?? this.image,
       status: status ?? this.status,
+      barcode: barcode ?? this.barcode,
       price: price ?? this.price,
       expiryDate: expiryDate ?? this.expiryDate,
       description: description ?? this.description,
@@ -50,6 +54,7 @@ class StockItem {
       quantity: json['quantity'] as int,
       image: json['image'] as String,
       status: StockStatus.values.byName(json['status'] as String),
+      barcode: json['barcode'] as String?,
       price: json['price'] as double?,
       expiryDate:
           json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : null,
@@ -64,6 +69,7 @@ class StockItem {
       'quantity': quantity,
       'image': image,
       'status': status.name,
+      'barcode': barcode,
       'price': price,
       'expiryDate': expiryDate?.toIso8601String(),
       'description': description,
