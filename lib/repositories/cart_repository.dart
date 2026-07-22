@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:store/models/products_model.dart';
+import 'package:store/repositories/product_repository.dart';
 
 class CartItem {
   CartItem({required this.product, required this.quantity});
@@ -83,11 +84,14 @@ class CartRepository extends ChangeNotifier {
   }
   
   void addItem(StockItem product, int quantity) {
+    final stock = ProductRepository.instance.findById(product.id);
+    final maxStock = stock?.quantity ?? product.quantity;
     final index = _items.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
-      _items[index].quantity += quantity;
+      final newQty = _items[index].quantity + quantity;
+      _items[index].quantity = newQty > maxStock ? maxStock : newQty;
     } else {
-      _items.add(CartItem(product: product, quantity: quantity));
+      _items.add(CartItem(product: product, quantity: quantity > maxStock ? maxStock : quantity));
     }
     _saveCart();
     notifyListeners();
@@ -100,7 +104,9 @@ class CartRepository extends ChangeNotifier {
     }
     final index = _items.indexWhere((item) => item.product.id == productId);
     if (index >= 0) {
-      _items[index].quantity = quantity;
+      final stock = ProductRepository.instance.findById(productId);
+      final maxStock = stock?.quantity ?? _items[index].product.quantity;
+      _items[index].quantity = quantity > maxStock ? maxStock : quantity;
       _saveCart();
       notifyListeners();
     }

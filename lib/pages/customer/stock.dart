@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
@@ -521,9 +522,9 @@ class _StockPageState extends State<StockPage> {
                             ),
                             const SizedBox(height: 20),
                           ],
-                          // Quantity input
+                           // Quantity input
                           Text(
-                            'Quantity',
+                            'Quantity (max ${product.quantity})',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -534,6 +535,10 @@ class _StockPageState extends State<StockPage> {
                           TextField(
                             controller: quantityController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              _MaxValueFormatter(product.quantity),
+                            ],
                             decoration: InputDecoration(
                               hintText: 'Enter quantity',
                               hintStyle: GoogleFonts.poppins(
@@ -601,12 +606,14 @@ class _StockPageState extends State<StockPage> {
                                     final qty =
                                         int.tryParse(quantityController.text) ??
                                         1;
+                                    if (qty <= 0) return;
+                                    final actualQty = qty > product.quantity ? product.quantity : qty;
                                     // ── Actually add to the cart ──
-                                    context.read<CartRepository>().addItem(product, qty);
+                                    context.read<CartRepository>().addItem(product, actualQty);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '${product.name} ×$qty added to cart',
+                                          '${product.name} ×$actualQty added to cart',
                                           style: GoogleFonts.poppins(),
                                         ),
                                         duration: const Duration(seconds: 2),
@@ -648,5 +655,27 @@ class _StockPageState extends State<StockPage> {
         );
       },
     );
+  }
+}
+
+class _MaxValueFormatter extends TextInputFormatter {
+  final int maxValue;
+  _MaxValueFormatter(this.maxValue);
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+    final value = int.tryParse(newValue.text);
+    if (value == null) return oldValue;
+    if (value > maxValue) {
+      return TextEditingValue(
+        text: '$maxValue',
+        selection: TextSelection.collapsed(offset: '$maxValue'.length),
+      );
+    }
+    return newValue;
   }
 }

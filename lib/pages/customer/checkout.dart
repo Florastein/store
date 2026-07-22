@@ -94,6 +94,30 @@ class _CameraControllerManager {
   }
 }
 
+class _MaxValueFormatter extends TextInputFormatter {
+  final int maxValue;
+
+  _MaxValueFormatter(this.maxValue);
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+    final int? value = int.tryParse(newValue.text);
+    if (value != null && value > maxValue) {
+      return TextEditingValue(
+        text: maxValue.toString(),
+        selection: TextSelection.collapsed(offset: maxValue.toString().length),
+      );
+    }
+    return newValue;
+  }
+}
+
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -196,7 +220,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     itemCount: products.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final product = products[index];
                       return _ProductPickerItem(
@@ -323,6 +348,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                         ),
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
+                          _MaxValueFormatter(product.quantity),
                         ],
                         decoration: InputDecoration(
                           border: InputBorder.none,
@@ -352,9 +378,12 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     child: InkWell(
                       onTap: isActive
                           ? () {
+                              final cappedQty = qty > product.quantity
+                                  ? product.quantity
+                                  : qty;
                               context.read<CartRepository>().addItem(
                                 product,
-                                qty,
+                                cappedQty,
                               );
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -372,7 +401,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        'Added $qty x ${product.name} to cart',
+                                        'Added $cappedQty x ${product.name} to cart',
                                         style: GoogleFonts.poppins(
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -524,10 +553,7 @@ class _ProductPickerItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
           ],
         ),
       ),

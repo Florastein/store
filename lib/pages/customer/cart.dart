@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:store/repositories/cart_repository.dart';
+import 'package:store/repositories/product_repository.dart';
+import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 
 class CartPage extends StatelessWidget {
@@ -202,6 +204,9 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentStock = ProductRepository.instance.findById(item.product.id)?.quantity ?? item.product.quantity;
+    final atMax = item.quantity >= currentStock;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -286,6 +291,7 @@ class _CartItemCard extends StatelessWidget {
               ),
               _StepperButton(
                 icon: Icons.add,
+                enabled: !atMax,
                 onTap: () {
                   context.read<CartRepository>().updateQuantity(
                     item.product.id,
@@ -314,23 +320,30 @@ class _CartItemCard extends StatelessWidget {
 
 // ── Small +/- button ─────────────────────────────────────────────────────────
 class _StepperButton extends StatelessWidget {
-  const _StepperButton({required this.icon, required this.onTap});
+  const _StepperButton({required this.icon, required this.onTap, this.enabled = true});
 
   final IconData icon;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: Container(
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: AppColors.navigationActive.withValues(alpha: 0.12),
+          color: enabled
+              ? AppColors.navigationActive.withValues(alpha: 0.12)
+              : Colors.grey.withValues(alpha: 0.12),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16, color: AppColors.navigationActive),
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? AppColors.navigationActive : Colors.grey,
+        ),
       ),
     );
   }
