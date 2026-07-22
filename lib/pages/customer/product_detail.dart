@@ -96,7 +96,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             },
                           ),
                           if (widget.product.status != StockStatus.normal)
-                            Container(color: Colors.white.withOpacity(0.3)),
+                            Container(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
                         ],
                       ),
                     ),
@@ -325,7 +327,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '${widget.product.name} updated with ${_quantity} items',
+                              '${widget.product.name} updated with $_quantity items',
                               style: GoogleFonts.poppins(),
                             ),
                             duration: const Duration(seconds: 2),

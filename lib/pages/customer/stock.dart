@@ -297,7 +297,10 @@ class _StockPageState extends State<StockPage> {
                 top: 6,
                 right: 6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
                     color: product.status == StockStatus.lowStock
@@ -365,8 +368,8 @@ class _StockPageState extends State<StockPage> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.white.withOpacity(0.3),
-                          Colors.white.withOpacity(0.7),
+                          Colors.white.withValues(alpha: 0.3),
+                          Colors.white.withValues(alpha: 0.7),
                           Colors.white,
                         ],
                         stops: const [0.0, 0.3, 0.6, 1.0],
@@ -431,7 +434,9 @@ class _StockPageState extends State<StockPage> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              DateFormat('MMM d, y').format(product.expiryDate!),
+                              DateFormat(
+                                'MMM d, y',
+                              ).format(product.expiryDate!),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 color: const Color(0xFF2F2F2F),
@@ -511,7 +516,9 @@ class _StockPageState extends State<StockPage> {
                                 child: GestureDetector(
                                   onTap: () => Navigator.pop(context),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: const Color(0xFFE0E0E0),
@@ -536,7 +543,8 @@ class _StockPageState extends State<StockPage> {
                                 child: GestureDetector(
                                   onTap: () {
                                     final quantity =
-                                        int.tryParse(quantityController.text) ?? 1;
+                                        int.tryParse(quantityController.text) ??
+                                        1;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -549,7 +557,9 @@ class _StockPageState extends State<StockPage> {
                                     Navigator.pop(context);
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.navigationActive,
                                       borderRadius: BorderRadius.circular(8),
