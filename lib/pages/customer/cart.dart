@@ -17,17 +17,21 @@ class CartPage extends StatelessWidget {
         child: Consumer<CartRepository>(
           builder: (context, cartRepo, _) {
             final cartItems = cartRepo.items;
-            
+
             if (cartRepo.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            
+
             if (cartRepo.error != null) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       cartRepo.error!,
@@ -38,7 +42,7 @@ class CartPage extends StatelessWidget {
                 ),
               );
             }
-            
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -204,7 +208,9 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentStock = ProductRepository.instance.findById(item.product.id)?.quantity ?? item.product.quantity;
+    final currentStock =
+        ProductRepository.instance.findById(item.product.id)?.quantity ??
+        item.product.quantity;
     final atMax = item.quantity >= currentStock;
 
     return Container(
@@ -305,7 +311,8 @@ class _CartItemCard extends StatelessWidget {
           // Remove button
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: () => context.read<CartRepository>().removeItem(item.product.id),
+            onTap: () =>
+                context.read<CartRepository>().removeItem(item.product.id),
             child: const Icon(
               Icons.delete_outline_rounded,
               color: Colors.red,
@@ -320,7 +327,11 @@ class _CartItemCard extends StatelessWidget {
 
 // ── Small +/- button ─────────────────────────────────────────────────────────
 class _StepperButton extends StatelessWidget {
-  const _StepperButton({required this.icon, required this.onTap, this.enabled = true});
+  const _StepperButton({
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
@@ -349,109 +360,162 @@ class _StepperButton extends StatelessWidget {
   }
 }
 
-// ── Order summary footer ──────────────────────────────────────────────────────
-class _OrderSummary extends StatelessWidget {
+class _OrderSummary extends StatefulWidget {
   const _OrderSummary({required this.items});
 
   final List<CartItem> items;
 
   @override
+  State<_OrderSummary> createState() => _OrderSummaryState();
+}
+
+class _OrderSummaryState extends State<_OrderSummary> {
+  bool _isActive = false;
+  final TextEditingController _customerIdController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    _customerIdController.addListener(() {
+      setState(() {
+        _isActive = _customerIdController.text.trim().isNotEmpty;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _customerIdController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final totalItems = items.fold<int>(0, (sum, item) => sum + item.quantity);
-    final totalPrice = items.fold<double>(
+    final totalPrice = widget.items.fold<double>(
       0.0,
       (sum, item) => sum + (item.product.price ?? 0.0) * item.quantity,
     );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Items ($totalItems)',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: const Color(0xFF8E8E93),
-                ),
-              ),
-              Text(
-                '₵${totalPrice.toStringAsFixed(2)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2F2F2F),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          const Divider(),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Total',
+                "Customer ID",
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF2F2F2F),
                 ),
               ),
-              Text(
-                '₵${totalPrice.toStringAsFixed(2)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.navigationActive,
+              SizedBox(
+                width: 93,
+                height: 38,
+                child: TextField(
+                  controller: _customerIdController,
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    contentPadding: EdgeInsets.all(2),
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blue, width: 2),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           SizedBox(
             width: double.infinity,
             child: GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Order placed! Total: ₵${totalPrice.toStringAsFixed(2)}',
-                      style: GoogleFonts.poppins(),
-                    ),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-                context.read<CartRepository>().clear();
-              },
+              onTap: _isActive
+                  ? () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) {
+                          return Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+
+                                Text("Receipt", style: GoogleFonts.poppins()),
+                                const SizedBox(height: 16),
+
+                                Text(
+                                  "Total: ₵${totalPrice.toStringAsFixed(2)}",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.labelPrimary,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.labelPrimary,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      context.read<CartRepository>().clear();
+                                      Navigator.pop(context); // Close the modal
+                                    },
+                                    child: Text(
+                                      "Done",
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  : null,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.navigationActive,
+                  color: _isActive ? AppColors.labelPrimary : Colors.grey,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
+                child: const Center(
                   child: Text(
-                    'Place Order',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                    "Checkout",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
