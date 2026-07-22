@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:provider/provider.dart';
+import 'package:store/repositories/cart_repository.dart';
+import 'package:store/repositories/product_repository.dart';
 import 'package:store/models/products_model.dart';
-import 'package:store/models/product_repository.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
@@ -16,8 +18,6 @@ class StockPage extends StatefulWidget {
 class _StockPageState extends State<StockPage> {
   String _searchQuery = '';
   final String _selectedFilter = 'all';
-
-  List<StockItem> get _products => ProductRepository.all;
 
   @override
   Widget build(BuildContext context) {
@@ -108,37 +108,93 @@ class _StockPageState extends State<StockPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Products grid
+              // Products grid – rebuilds whenever the product list changes
               Expanded(
-                child: ListView(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'All Products',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF333333),
+                child: Consumer<ProductRepository>(
+                  builder: (context, productRepo, _) {
+                    final products = productRepo.products;
+                    final displayed = _searchQuery.trim().isEmpty
+                        ? products
+                        : products
+                            .where(
+                              (p) => p.name
+                                  .toLowerCase()
+                                  .contains(_searchQuery.trim().toLowerCase()),
+                            )
+                            .toList();
+                    
+                    if (productRepo.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    if (productRepo.error != null) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text(
+                              productRepo.error!,
+                              style: GoogleFonts.poppins(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.75,
+                      );
+                    }
+                    
+                    if (displayed.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No products found',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF2F2F2F),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'All Products',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF333333),
+                            ),
                           ),
-                      itemCount: _products.length,
-                      itemBuilder: (context, index) {
-                        return _buildProductCard(_products[index]);
-                      },
-                    ),
-                  ],
+                        ),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: 0.75,
+                              ),
+                          itemCount: displayed.length,
+                          itemBuilder: (context, index) {
+                            return _buildProductCard(displayed[index]);
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -254,7 +310,7 @@ class _StockPageState extends State<StockPage> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle delete
+                                    context.read<ProductRepository>().remove(product.id);
                                   },
                                   child: const HugeIcon(
                                     icon: HugeIcons.strokeRoundedDelete04,
@@ -265,7 +321,7 @@ class _StockPageState extends State<StockPage> {
                                 const SizedBox(width: 4),
                                 GestureDetector(
                                   onTap: () {
-                                    // Handle add
+                                    _showProductModal(product);
                                   },
                                   child: const HugeIcon(
                                     icon: HugeIcons.strokeRoundedAdd01,
@@ -542,13 +598,15 @@ class _StockPageState extends State<StockPage> {
                               Expanded(
                                 child: GestureDetector(
                                   onTap: () {
-                                    final quantity =
+                                    final qty =
                                         int.tryParse(quantityController.text) ??
                                         1;
+                                    // ── Actually add to the cart ──
+                                    context.read<CartRepository>().addItem(product, qty);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          '${product.name} ($quantity) added to cart',
+                                          '${product.name} ×$qty added to cart',
                                           style: GoogleFonts.poppins(),
                                         ),
                                         duration: const Duration(seconds: 2),

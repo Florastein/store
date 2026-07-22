@@ -1,0 +1,297 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:store/models/products_model.dart';
+
+class ProductRepository extends ChangeNotifier {
+  ProductRepository._();
+  
+  static final ProductRepository instance = ProductRepository._();
+  
+  static const String _storageKey = 'products';
+  List<StockItem> _products = [];
+  bool _isLoading = false;
+  String? _error;
+  
+  List<StockItem> get products => _products;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  
+  int get nextId => _products.isEmpty
+      ? 1
+      : _products.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1;
+  
+  Future<void> loadProducts() async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+      
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_storageKey);
+      
+      if (jsonString != null) {
+        final List<dynamic> jsonList = jsonDecode(jsonString);
+        _products = jsonList.map((json) => StockItem.fromJson(json)).toList();
+      } else {
+        _products = _getDefaultProducts();
+        await _saveProducts();
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _error = 'Failed to load products: $e';
+      _products = _getDefaultProducts();
+      notifyListeners();
+    }
+  }
+  
+  Future<void> _saveProducts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(_products.map((p) => p.toJson()).toList());
+      await prefs.setString(_storageKey, jsonString);
+    } catch (e) {
+      debugPrint('Failed to save products: $e');
+    }
+  }
+  
+  void add(StockItem item) {
+    _products = [..._products, item];
+    _saveProducts();
+    notifyListeners();
+  }
+  
+  void updateQuantity(int id, int newQuantity) {
+    final index = _products.indexWhere((p) => p.id == id);
+    if (index < 0) return;
+    
+    final updated = _products[index].copyWith(
+      quantity: newQuantity,
+      status: _deriveStatus(newQuantity),
+    );
+    _products = List<StockItem>.from(_products)..[index] = updated;
+    _saveProducts();
+    notifyListeners();
+  }
+  
+  void remove(int id) {
+    _products = _products.where((p) => p.id != id).toList();
+    _saveProducts();
+    notifyListeners();
+  }
+  
+  void replace(StockItem updated) {
+    final index = _products.indexWhere((p) => p.id == updated.id);
+    if (index < 0) return;
+    _products = List<StockItem>.from(_products)..[index] = updated;
+    _saveProducts();
+    notifyListeners();
+  }
+  
+  StockItem? findByBarcode(String barcode) {
+    try {
+      return _products.firstWhere((p) => p.barcode == barcode);
+    } catch (_) {
+      return null;
+    }
+  }
+  
+  StockItem? findById(int id) {
+    try {
+      return _products.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+  
+  static StockStatus _deriveStatus(int quantity) {
+    if (quantity == 0) return StockStatus.outOfStock;
+    if (quantity <= 10) return StockStatus.lowStock;
+    return StockStatus.normal;
+  }
+  
+  List<StockItem> _getDefaultProducts() {
+    return [
+      StockItem(
+        id: 1,
+        name: 'KitKat',
+        quantity: 80,
+        image: 'https://via.placeholder.com/120?text=KitKat',
+        status: StockStatus.normal,
+        barcode: '5000159402974',
+        price: 2.50,
+        expiryDate: DateTime(2025, 12, 31),
+        description: 'Crispy wafer bar with chocolate coating. Perfect for a quick snack.',
+      ),
+      StockItem(
+        id: 2,
+        name: "Lay's",
+        quantity: 200,
+        image: 'https://via.placeholder.com/120?text=Lays',
+        status: StockStatus.normal,
+        barcode: '8901072100983',
+        price: 1.50,
+        expiryDate: DateTime(2025, 11, 15),
+        description: 'Crispy potato chips with a light and savory flavor.',
+      ),
+      StockItem(
+        id: 3,
+        name: 'Pepsi',
+        quantity: 6,
+        image: 'https://via.placeholder.com/120?text=Pepsi',
+        status: StockStatus.lowStock,
+        barcode: '5449000131805',
+        price: 1.20,
+        expiryDate: DateTime(2025, 10, 20),
+        description: 'Refreshing cola drink. Serve ice cold for best taste.',
+      ),
+      StockItem(
+        id: 4,
+        name: 'Nutella',
+        quantity: 0,
+        image: 'https://via.placeholder.com/120?text=Nutella',
+        status: StockStatus.outOfStock,
+        barcode: '8000500010620',
+        price: 8.99,
+        expiryDate: DateTime(2025, 9, 10),
+        description: 'Delicious hazelnut chocolate spread. Great for breakfast.',
+      ),
+      StockItem(
+        id: 5,
+        name: 'Cheetos',
+        quantity: 80,
+        image: 'https://via.placeholder.com/120?text=Cheetos',
+        status: StockStatus.normal,
+        barcode: '8901063032033',
+        price: 1.75,
+        expiryDate: DateTime(2025, 12, 25),
+        description: 'Cheesy puffed corn snack. Irresistibly crunchy!',
+      ),
+      StockItem(
+        id: 6,
+        name: 'Oreo',
+        quantity: 50,
+        image: 'https://via.placeholder.com/120?text=Oreo',
+        status: StockStatus.normal,
+        barcode: '7622210449283',
+        price: 3.50,
+        expiryDate: DateTime(2026, 1, 15),
+        description: 'Classic chocolate sandwich cookies with cream filling.',
+      ),
+      StockItem(
+        id: 7,
+        name: 'Bottle Water',
+        quantity: 100,
+        image: 'https://via.placeholder.com/120?text=Water',
+        status: StockStatus.normal,
+        barcode: '5449000018246',
+        price: 0.50,
+        expiryDate: DateTime(2025, 6, 30),
+        description: 'Pure drinking water. 500ml bottle. Stay hydrated!',
+      ),
+      StockItem(
+        id: 8,
+        name: 'Tide plus',
+        quantity: 30,
+        image: 'https://via.placeholder.com/120?text=Tide',
+        status: StockStatus.normal,
+        barcode: '4902430401539',
+        price: 5.99,
+        expiryDate: DateTime(2026, 3, 20),
+        description: 'Advanced laundry detergent. Removes tough stains effectively.',
+      ),
+      StockItem(
+        id: 9,
+        name: 'Vanish gold',
+        quantity: 19,
+        image: 'https://via.placeholder.com/120?text=Vanish',
+        status: StockStatus.normal,
+        barcode: '8717644489318',
+        price: 3.99,
+        expiryDate: DateTime(2026, 2, 10),
+        description: 'Powerful stain remover for white clothes.',
+      ),
+      StockItem(
+        id: 10,
+        name: 'Colgate',
+        quantity: 0,
+        image: 'https://via.placeholder.com/120?text=Colgate',
+        status: StockStatus.outOfStock,
+        barcode: '8901072100099',
+        price: 1.99,
+        expiryDate: DateTime(2025, 8, 15),
+        description: 'Fresh mint toothpaste for healthy teeth.',
+      ),
+      StockItem(
+        id: 11,
+        name: 'Dove',
+        quantity: 5,
+        image: 'https://via.placeholder.com/120?text=Dove',
+        status: StockStatus.lowStock,
+        barcode: '8717644481152',
+        price: 2.50,
+        expiryDate: DateTime(2026, 1, 20),
+        description: 'Gentle beauty bar for sensitive skin.',
+      ),
+      StockItem(
+        id: 12,
+        name: 'Lifebuoy',
+        quantity: 0,
+        image: 'https://via.placeholder.com/120?text=Lifebuoy',
+        status: StockStatus.outOfStock,
+        barcode: '8901072100181',
+        price: 1.50,
+        expiryDate: DateTime(2025, 9, 5),
+        description: 'Antibacterial soap bar. Kills 99.9% germs.',
+      ),
+      StockItem(
+        id: 13,
+        name: 'Sunsilk',
+        quantity: 25,
+        image: 'https://via.placeholder.com/120?text=Sunsilk',
+        status: StockStatus.normal,
+        barcode: '8901072100044',
+        price: 3.75,
+        expiryDate: DateTime(2026, 4, 30),
+        description: 'Sunscreen hair care shampoo. Protects against UV damage.',
+      ),
+      StockItem(
+        id: 14,
+        name: 'Head & Shoulders',
+        quantity: 0,
+        image: 'https://via.placeholder.com/120?text=H%26S',
+        status: StockStatus.outOfStock,
+        barcode: '4902430201092',
+        price: 4.99,
+        expiryDate: DateTime(2025, 10, 10),
+        description: 'Anti-dandruff shampoo. Effective scalp care.',
+      ),
+      StockItem(
+        id: 15,
+        name: 'Pantene',
+        quantity: 10,
+        image: 'https://via.placeholder.com/120?text=Pantene',
+        status: StockStatus.lowStock,
+        barcode: '4902430201085',
+        price: 4.50,
+        expiryDate: DateTime(2025, 12, 5),
+        description: 'Premium care shampoo for smooth and shiny hair.',
+      ),
+      StockItem(
+        id: 16,
+        name: 'Fair & Lovely',
+        quantity: 0,
+        image: 'https://via.placeholder.com/120?text=F%26L',
+        status: StockStatus.outOfStock,
+        barcode: '8901072100105',
+        price: 6.99,
+        expiryDate: DateTime(2025, 11, 15),
+        description: 'Fairness cream with SPF 30. Complete skin brightening.',
+      ),
+    ];
+  }
+}

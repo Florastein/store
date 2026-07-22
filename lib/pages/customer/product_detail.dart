@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:store/models/products_model.dart';
+import 'package:store/repositories/product_repository.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
@@ -290,6 +292,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
+                        // Remove from the reactive product store
+                        context.read<ProductRepository>().remove(widget.product.id);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -324,6 +328,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
+                        // Persist the updated quantity in the reactive store
+                        context.read<ProductRepository>().updateQuantity(
+                          widget.product.id,
+                          _quantity,
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(

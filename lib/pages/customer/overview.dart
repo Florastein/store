@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:provider/provider.dart';
 import 'package:store/pages/customer/notification_page.dart';
+import 'package:store/repositories/product_repository.dart';
+import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 
 class CustomerOverview extends StatefulWidget {
@@ -22,6 +25,14 @@ class _CustomerOverviewState extends State<CustomerOverview> {
 
   @override
   Widget build(BuildContext context) {
+    final productRepo = context.watch<ProductRepository>();
+    final products = productRepo.products;
+    
+    final totalProducts = products.length;
+    final lowStockCount = products.where((p) => 
+      p.status == StockStatus.lowStock || p.status == StockStatus.outOfStock
+    ).length;
+    
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -100,11 +111,11 @@ class _CustomerOverviewState extends State<CustomerOverview> {
             Row(
               children: [
                 Expanded(
-                  child: _statCard(title: 'Products', value: '0'),
+                  child: _statCard(title: 'Products', value: '$totalProducts'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _statCard(title: 'Low Stock', value: '0'),
+                  child: _statCard(title: 'Low Stock', value: '$lowStockCount'),
                 ),
               ],
             ),

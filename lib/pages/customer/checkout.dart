@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:provider/provider.dart';
+import 'package:store/models/products_model.dart';
+import 'package:store/repositories/cart_repository.dart';
+import 'package:store/repositories/product_repository.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/pages/customer/cart.dart';
 
-// ---------------------------------------------------------------------
-// 1.  CONSTANTS – all dimensions and durations in one place
-// ---------------------------------------------------------------------
 class _CheckoutConstants {
   static const double bottomRadius = 45.0;
   static const double previewHeightFactor = 0.80;
@@ -19,9 +20,6 @@ class _CheckoutConstants {
   static const double cartIconSize = 28.0;
 }
 
-// ---------------------------------------------------------------------
-// 2.  CAMERA MANAGER – handles all camera logic, lifecycle, and state
-// ---------------------------------------------------------------------
 class _CameraControllerManager {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
@@ -30,7 +28,6 @@ class _CameraControllerManager {
   bool get isInitialized => _isInitialized;
   CameraController? get controller => _controller;
 
-  // Callback to notify the UI when initialization state changes
   final VoidCallback? onStateChanged;
 
   _CameraControllerManager({this.onStateChanged});
@@ -73,9 +70,7 @@ class _CameraControllerManager {
   }
 
   Future<XFile?> takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return null;
-    }
+    if (_controller == null || !_controller!.value.isInitialized) return null;
     if (_controller!.value.isTakingPicture) return null;
     try {
       return await _controller!.takePicture();
@@ -85,7 +80,6 @@ class _CameraControllerManager {
     }
   }
 
-  // Lifecycle: pause when inactive, resume when active
   void handleLifecycleState(AppLifecycleState state) {
     if (_controller == null || !_controller!.value.isInitialized) return;
     if (state == AppLifecycleState.inactive) {
@@ -93,7 +87,6 @@ class _CameraControllerManager {
       _controller = null;
       _isInitialized = false;
     } else if (state == AppLifecycleState.resumed) {
-      // Re-initialize with the same description
       if (_cameras != null && _cameras!.isNotEmpty) {
         _initCamera(_cameras![0]);
       }
@@ -101,9 +94,6 @@ class _CameraControllerManager {
   }
 }
 
-// ---------------------------------------------------------------------
-// 3.  MAIN SCREEN – becomes a thin wrapper that composes child widgets
-// ---------------------------------------------------------------------
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -142,13 +132,95 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   Future<void> _onCapturePressed() async {
     final file = await _cameraManager.takePicture();
     if (file != null && mounted) {
-      _showCheckoutBottomSheet(context, file);
+      _showProductPicker(context);
     }
   }
 
-  Future<void> _showCheckoutBottomSheet(BuildContext context, XFile file) {
+  void _showProductPicker(BuildContext context) {
+    final products = context.read<ProductRepository>().products;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (BuildContext ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Select Product',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF2F2F2F),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${products.length} items',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: const Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    itemCount: products.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return _ProductPickerItem(
+                        product: product,
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _showAddToCartSheet(context, product);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddToCartSheet(BuildContext context, StockItem product) {
     final quantityController = TextEditingController(text: '1');
-    return showModalBottomSheet(
+
+    showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.backgroundColor,
       shape: const RoundedRectangleBorder(
@@ -158,22 +230,21 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         ),
       ),
       isScrollControlled: true,
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return Padding(
           padding: EdgeInsets.only(
             left: 24,
             right: 24,
             top: 10,
             bottom:
-                MediaQuery.of(context).padding.bottom +
-                MediaQuery.of(context).viewInsets.bottom +
+                MediaQuery.of(ctx).padding.bottom +
+                MediaQuery.of(ctx).viewInsets.bottom +
                 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Drag Handle
               Center(
                 child: Container(
                   width: 36,
@@ -185,28 +256,42 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 ),
               ),
               const SizedBox(height: 24),
-              // Content Row
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Product Info
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      product.image,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 56,
+                        height: 56,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image_not_supported, size: 24),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Lay’s Potato Chips",
+                          product.name,
                           style: GoogleFonts.poppins(
-                            fontSize: 22,
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: AppColors.labelPrimary,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
-                          "80 in stock",
+                          '${product.quantity} in stock',
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
+                            fontSize: 14,
                             color: const Color(0xFF8E8E93),
                             fontWeight: FontWeight.w400,
                           ),
@@ -215,7 +300,6 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // Quantity Input TextField
                   Container(
                     width: 70,
                     height: 50,
@@ -256,12 +340,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 ],
               ),
               const SizedBox(height: 28),
-              // Add Button
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: quantityController,
                 builder: (context, value, child) {
-                  final qtyText = value.text.trim();
-                  final qty = int.tryParse(qtyText) ?? 0;
+                  final qty = int.tryParse(value.text.trim()) ?? 0;
                   final isActive = qty > 0;
 
                   return Semantics(
@@ -270,7 +352,11 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     child: InkWell(
                       onTap: isActive
                           ? () {
-                              Navigator.pop(context);
+                              context.read<CartRepository>().addItem(
+                                product,
+                                qty,
+                              );
+                              Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: AppColors.success,
@@ -286,7 +372,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                                       ),
                                       const SizedBox(width: 10),
                                       Text(
-                                        "Added $qty x Lay’s Potato Chips to checkout",
+                                        'Added $qty x ${product.name} to cart',
                                         style: GoogleFonts.poppins(
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -308,7 +394,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                         ),
                         child: Center(
                           child: Text(
-                            "Add",
+                            'Add to Cart',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -337,9 +423,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         backgroundColor: AppColors.backgroundColor,
         body: Stack(
           children: [
-            // Background camera preview (rounded bottom)
             _CameraPreviewWidget(manager: _cameraManager),
-            // Top glass‑morphic app bar
             const Positioned(
               top: 0,
               left: 0,
@@ -354,7 +438,6 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 ),
               ),
             ),
-            // Bottom capture button centered in the space under the camera view area
             Positioned(
               bottom: 0,
               left: 0,
@@ -376,9 +459,82 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   }
 }
 
-// ---------------------------------------------------------------------
-// 4.  CAMERA PREVIEW WIDGET – handles the actual preview rendering
-// ---------------------------------------------------------------------
+class _ProductPickerItem extends StatelessWidget {
+  const _ProductPickerItem({required this.product, required this.onTap});
+
+  final StockItem product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                product.image,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 48,
+                  height: 48,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image_not_supported, size: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF2F2F2F),
+                    ),
+                  ),
+                  if (product.price != null)
+                    Text(
+                      '₵${product.price!.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.navigationActive,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              '${product.quantity} in stock',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFF8E8E93),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CameraPreviewWidget extends StatelessWidget {
   const _CameraPreviewWidget({required this.manager});
 
@@ -425,9 +581,6 @@ class _CameraPreviewWidget extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------
-// 5.  CAPTURE BUTTON (shutter) – stateless, with semantics
-// ---------------------------------------------------------------------
 class _CaptureButton extends StatelessWidget {
   const _CaptureButton({required this.isEnabled, required this.onPressed});
 
@@ -476,9 +629,6 @@ class _CaptureButton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------
-// 6.  CUSTOM APP BAR – glassmorphic effect with the cart icon
-// ---------------------------------------------------------------------
 class _CustomAppBar extends StatelessWidget {
   const _CustomAppBar();
 
@@ -495,15 +645,12 @@ class _CustomAppBar extends StatelessWidget {
             color: AppColors.labelPrimary,
           ),
         ),
-        _CartButton(),
+        const _CartButton(),
       ],
     );
   }
 }
 
-// ---------------------------------------------------------------------
-// 7.  CART BUTTON – fully glass‑morphic, extracted for clarity
-// ---------------------------------------------------------------------
 class _CartButton extends StatelessWidget {
   const _CartButton();
 

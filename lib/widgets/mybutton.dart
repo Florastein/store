@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class MyButton extends StatefulWidget {
-  MyButton({
+class MyButton extends StatelessWidget {
+  const MyButton({
     super.key,
     required this.onPressed,
     required this.text,
@@ -16,40 +16,35 @@ class MyButton extends StatefulWidget {
 
   final VoidCallback onPressed;
   final String text;
-  double? width;
-  double height;
+  final double? width;
+  final double height;
   final Color color;
-  Color textColor;
-  double fontSize;
-  FontWeight fontWeight;
+  final Color textColor;
+  final double fontSize;
+  final FontWeight fontWeight;
 
-  @override
-  State<MyButton> createState() => _MyButtonState();
-}
-
-class _MyButtonState extends State<MyButton> {
   @override
   Widget build(BuildContext context) {
     final double buttonWidth =
-        widget.width ?? MediaQuery.sizeOf(context).width * 0.9;
+        width ?? MediaQuery.sizeOf(context).width * 0.9;
 
     return GestureDetector(
-      onTap: widget.onPressed,
+      onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         width: buttonWidth,
-        height: widget.height,
+        height: height,
         decoration: BoxDecoration(
-          color: widget.color,
+          color: color,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Center(
           child: Text(
-            widget.text,
+            text,
             style: GoogleFonts.poppins(
-              fontSize: widget.fontSize,
-              color: widget.textColor,
-              fontWeight: widget.fontWeight,
+              fontSize: fontSize,
+              color: textColor,
+              fontWeight: fontWeight,
             ),
           ),
         ),
