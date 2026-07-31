@@ -61,6 +61,7 @@ class _CreateShopAccountState extends State<CreateShopAccount> {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('shop_name', _businessController.text.trim());
+      await prefs.setString('customer_name', _nameController.text.trim());
       if (!mounted) return;
       Navigator.of(
         context,

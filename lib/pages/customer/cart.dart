@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
@@ -367,13 +368,11 @@ class _CustomerField extends StatelessWidget {
     required this.label,
     required this.controller,
     this.keyboardType,
-    this.textInputAction,
   });
 
   final String label;
   final TextEditingController controller;
   final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
 
   @override
   Widget build(BuildContext context) {
@@ -394,11 +393,10 @@ class _CustomerField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            textInputAction: textInputAction,
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              hintText: label == 'Customer Name' ? 'John Doe' : '001',
+              hintText: '001',
               hintStyle: GoogleFonts.poppins(
                 fontSize: 12,
                 color: const Color(0xFFB0B0B0),
@@ -432,28 +430,21 @@ class _OrderSummary extends StatefulWidget {
 
 class _OrderSummaryState extends State<_OrderSummary> {
   bool _isActive = false;
-  final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _customerIdController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    void updateActive() {
+    _customerIdController.addListener(() {
       setState(() {
-        _isActive =
-            _customerNameController.text.trim().isNotEmpty &&
-            _customerIdController.text.trim().isNotEmpty;
+        _isActive = _customerIdController.text.trim().isNotEmpty;
       });
-    }
-
-    _customerNameController.addListener(updateActive);
-    _customerIdController.addListener(updateActive);
+    });
   }
 
   @override
   void dispose() {
-    _customerNameController.dispose();
     _customerIdController.dispose();
     super.dispose();
   }
@@ -464,12 +455,6 @@ class _OrderSummaryState extends State<_OrderSummary> {
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
       child: Column(
         children: [
-          _CustomerField(
-            label: 'Customer Name',
-            controller: _customerNameController,
-            textInputAction: TextInputAction.next,
-          ),
-          const SizedBox(height: 12),
           _CustomerField(
             label: 'Customer ID',
             controller: _customerIdController,
@@ -505,8 +490,8 @@ class _OrderSummaryState extends State<_OrderSummary> {
   Future<void> _showReceipt() async {
     final prefs = await SharedPreferences.getInstance();
     final shopName = prefs.getString('shop_name') ?? '';
+    final customerName = prefs.getString('customer_name') ?? '';
     if (!mounted) return;
-    final customerName = _customerNameController.text.trim();
     final customerId = _customerIdController.text.trim();
     final totalPrice = widget.items.fold<double>(
       0.0,
@@ -803,7 +788,22 @@ class _OrderSummaryState extends State<_OrderSummary> {
     required String formattedDate,
     required List<CartItem> items,
   }) async {
-    final doc = pw.Document();
+    final dmSansRegular = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/DMSans-Regular.ttf'),
+    );
+    final dmSansBold = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/DMSans-Bold.ttf'),
+    );
+    final notoSans = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/NotoSans.ttf'),
+    );
+    final doc = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: dmSansRegular,
+        bold: dmSansBold,
+        fontFallback: [notoSans],
+      ),
+    );
 
     doc.addPage(
       pw.MultiPage(
@@ -888,18 +888,13 @@ class _OrderSummaryState extends State<_OrderSummary> {
                 children: [
                   pw.Expanded(
                     child: pw.Text(
-                      item.product.name,
+                      '${item.product.name} x${item.quantity}',
                       style: const pw.TextStyle(fontSize: 14),
                     ),
                   ),
                   pw.Text(
-                    '₵ ${(item.product.price ?? 0.0).toStringAsFixed(2)}',
+                    'GH₵ ${((item.product.price ?? 0.0) * item.quantity).toStringAsFixed(2)}',
                     style: const pw.TextStyle(fontSize: 14),
-                  ),
-                  pw.SizedBox(width: 8),
-                  pw.Text(
-                    'x${item.quantity}',
-                    style: pw.TextStyle(fontSize: 14, color: PdfColors.grey),
                   ),
                 ],
               ),
@@ -915,7 +910,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
             children: [
               pw.Text('Total Amount', style: const pw.TextStyle(fontSize: 18)),
               pw.Text(
-                '₵ ${totalPrice.toStringAsFixed(2)}',
+                'GH₵ ${totalPrice.toStringAsFixed(2)}',
                 style: pw.TextStyle(
                   fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
@@ -970,16 +965,20 @@ class _ReceiptItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name, style: GoogleFonts.dmSans(fontSize: 14)),
           Row(
+            mainAxisSize: .min,
             children: [
+              Text(name, style: GoogleFonts.dmSans(fontSize: 14)),
+              SizedBox(width: 3),
               Text(
-                '₵ ${price.toStringAsFixed(2)}',
-                style: GoogleFonts.dmSans(fontSize: 14),
+                "x$qty",
+                style: GoogleFonts.dmSans(color: AppColors.gray, fontSize: 10),
               ),
-              const SizedBox(width: 8),
-              Text('x$qty', style: GoogleFonts.dmSans(color: Colors.grey)),
             ],
+          ),
+          Text(
+            '₵ ${(price * qty).toStringAsFixed(2)}',
+            style: GoogleFonts.dmSans(fontSize: 14),
           ),
         ],
       ),

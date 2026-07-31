@@ -5,6 +5,7 @@ import 'package:store/pages/auth/create_password.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 import 'package:store/pages/auth/login/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
@@ -50,8 +51,11 @@ class _CreateAccountState extends State<CreateAccount> {
     setState(() {});
   }
 
-  void _onNextPressed() {
+  void _onNextPressed() async {
     if (_formKey.currentState!.validate()) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('customer_name', _nameController.text.trim());
+      if (!mounted) return;
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => const CreatePassword()));
