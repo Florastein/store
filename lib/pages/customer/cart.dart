@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:store/repositories/cart_repository.dart';
 import 'package:store/repositories/product_repository.dart';
 import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -163,17 +165,10 @@ class _EmptyCartState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/empty_cart.png',
+            SvgPicture.asset(
+              'assets/images/empty_cart.svg',
               height: 180,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.shopping_cart_outlined,
-                  size: 100,
-                  color: Colors.grey,
-                );
-              },
             ),
             const SizedBox(height: 24),
             Text(
@@ -360,6 +355,66 @@ class _StepperButton extends StatelessWidget {
   }
 }
 
+// ── Customer info field ───────────────────────────────────────────────────────
+class _CustomerField extends StatelessWidget {
+  const _CustomerField({
+    required this.label,
+    required this.controller,
+    this.keyboardType,
+    this.textInputAction,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF2F2F2F),
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          height: 40,
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              hintText: label == 'Customer Name' ? 'John Doe' : '001',
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFFB0B0B0),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: AppColors.navigationActive,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _OrderSummary extends StatefulWidget {
   const _OrderSummary({required this.items});
 
@@ -371,64 +426,48 @@ class _OrderSummary extends StatefulWidget {
 
 class _OrderSummaryState extends State<_OrderSummary> {
   bool _isActive = false;
+  final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _customerIdController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    _customerIdController.addListener(() {
+    void updateActive() {
       setState(() {
-        _isActive = _customerIdController.text.trim().isNotEmpty;
+        _isActive =
+            _customerNameController.text.trim().isNotEmpty &&
+            _customerIdController.text.trim().isNotEmpty;
       });
-    });
+    }
+
+    _customerNameController.addListener(updateActive);
+    _customerIdController.addListener(updateActive);
   }
 
   @override
   void dispose() {
+    _customerNameController.dispose();
     _customerIdController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalPrice = widget.items.fold<double>(
-      0.0,
-      (sum, item) => sum + (item.product.price ?? 0.0) * item.quantity,
-    );
-
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Customer ID",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF2F2F2F),
-                ),
-              ),
-              SizedBox(
-                width: 93,
-                height: 38,
-                child: TextField(
-                  controller: _customerIdController,
-                  textAlign: TextAlign.center,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.all(2),
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.blue, width: 2),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          _CustomerField(
+            label: 'Customer Name',
+            controller: _customerNameController,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 12),
+          _CustomerField(
+            label: 'Customer ID',
+            controller: _customerIdController,
+            keyboardType: TextInputType.number,
           ),
 
           const SizedBox(height: 16),
@@ -436,76 +475,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
           SizedBox(
             width: double.infinity,
             child: GestureDetector(
-              onTap: _isActive
-                  ? () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) {
-                          return Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(24),
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade300,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                Text("Receipt", style: GoogleFonts.poppins()),
-                                const SizedBox(height: 16),
-
-                                Text(
-                                  "Total: ₵${totalPrice.toStringAsFixed(2)}",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.labelPrimary,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 24),
-
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.labelPrimary,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      context.read<CartRepository>().clear();
-                                      Navigator.pop(context); // Close the modal
-                                    },
-                                    child: Text(
-                                      "Done",
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  : null,
+              onTap: _isActive ? _showReceipt : null,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
@@ -522,6 +492,278 @@ class _OrderSummaryState extends State<_OrderSummary> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showReceipt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final shopName = prefs.getString('shop_name') ?? '';
+    if (!mounted) return;
+    final customerName = _customerNameController.text.trim();
+    final customerId = _customerIdController.text.trim();
+    final totalPrice = widget.items.fold<double>(
+      0.0,
+      (sum, item) => sum + (item.product.price ?? 0.0) * item.quantity,
+    );
+    final now = DateTime.now();
+    final formattedDate =
+        '${now.day.toString().padLeft(2, '0')} - ${now.month.toString().padLeft(2, '0')} - ${now.year}   '
+        '${now.hour.toString().padLeft(2, '0')} : ${now.minute.toString().padLeft(2, '0')}';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          minChildSize: 0.6,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                controller: controller,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 50,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            'Receipt',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            shopName.isNotEmpty ? shopName : '...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Customer Name',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              customerName,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'ID',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 10,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              customerId,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+                    const _DashedLine(),
+
+                    const SizedBox(height: 32),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'ITEMS',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        Text(
+                          'Price',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const _DashedLine(),
+
+                    const SizedBox(height: 12),
+
+                    ...widget.items.map(
+                      (item) => _ReceiptItem(
+                        name: item.product.name,
+                        price: item.product.price ?? 0.0,
+                        qty: item.quantity,
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+                    const _DashedLine(),
+
+                    const SizedBox(height: 16),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Amount',
+                          style: GoogleFonts.dmSans(fontSize: 18),
+                        ),
+                        Text(
+                          '₵ ${totalPrice.toStringAsFixed(2)}',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    const Text(
+                      'DATE & TIME',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(formattedDate, style: const TextStyle(fontSize: 13)),
+
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.labelPrimary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        onPressed: () {
+                          context.read<CartRepository>().clear();
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "Done",
+                          style: GoogleFonts.poppins(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _ReceiptItem extends StatelessWidget {
+  const _ReceiptItem({
+    required this.name,
+    required this.price,
+    required this.qty,
+  });
+
+  final String name;
+  final double price;
+  final int qty;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(name, style: const TextStyle(fontSize: 16)),
+          Row(
+            children: [
+              Text(
+                '₵ ${price.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(width: 8),
+              Text('x$qty', style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashedLine extends StatelessWidget {
+  const _DashedLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(
+        40,
+        (_) => Expanded(
+          child: Container(
+            height: 1,
+            margin: const EdgeInsets.only(right: 6),
+            color: Colors.grey.shade400,
+          ),
+        ),
       ),
     );
   }

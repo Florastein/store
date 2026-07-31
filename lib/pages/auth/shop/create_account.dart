@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 import 'package:store/pages/auth/add_phone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateShopAccount extends StatefulWidget {
   const CreateShopAccount({super.key});
@@ -56,8 +57,11 @@ class _CreateShopAccountState extends State<CreateShopAccount> {
     setState(() {});
   }
 
-  void _onNextPressed() {
+  void _onNextPressed() async {
     if (_formKey.currentState!.validate()) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('shop_name', _businessController.text.trim());
+      if (!mounted) return;
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => const AddPhone()));

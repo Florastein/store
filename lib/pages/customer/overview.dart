@@ -27,12 +27,16 @@ class _CustomerOverviewState extends State<CustomerOverview> {
   Widget build(BuildContext context) {
     final productRepo = context.watch<ProductRepository>();
     final products = productRepo.products;
-    
+
     final totalProducts = products.length;
-    final lowStockCount = products.where((p) => 
-      p.status == StockStatus.lowStock || p.status == StockStatus.outOfStock
-    ).length;
-    
+    final lowStockCount = products
+        .where(
+          (p) =>
+              p.status == StockStatus.lowStock ||
+              p.status == StockStatus.outOfStock,
+        )
+        .length;
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
