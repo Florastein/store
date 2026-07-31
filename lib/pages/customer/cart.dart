@@ -501,6 +501,10 @@ class _OrderSummaryState extends State<_OrderSummary> {
     final formattedDate =
         '${now.day.toString().padLeft(2, '0')} - ${now.month.toString().padLeft(2, '0')} - ${now.year}   '
         '${now.hour.toString().padLeft(2, '0')} : ${now.minute.toString().padLeft(2, '0')}';
+    final receiptNo =
+        'RCP-${now.year}${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}-'
+        '${now.millisecondsSinceEpoch}';
 
     showModalBottomSheet(
       context: context,
@@ -558,6 +562,15 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                /*SizedBox(height: 12),
+                                Text(
+                                  'Receipt No. $receiptNo',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),*/
                               ],
                             ),
                           ),
@@ -591,7 +604,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    'ID',
+                                    'Receipt No.',
                                     style: GoogleFonts.dmSans(
                                       fontSize: 10,
                                       color: Colors.grey.shade600,
@@ -599,9 +612,9 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    customerId,
+                                    receiptNo,
                                     style: GoogleFonts.dmSans(
-                                      fontSize: 18,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -717,6 +730,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                     customerId: customerId,
                                     totalPrice: totalPrice,
                                     formattedDate: formattedDate,
+                                    receiptNo: receiptNo,
                                     items: widget.items,
                                   ),
                                   child: Container(
@@ -786,6 +800,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
     required String customerId,
     required double totalPrice,
     required String formattedDate,
+    required String receiptNo,
     required List<CartItem> items,
   }) async {
     final dmSansRegular = pw.Font.ttf(
@@ -819,6 +834,15 @@ class _OrderSummaryState extends State<_OrderSummary> {
             style: pw.TextStyle(
               fontSize: 16,
               color: PdfColors.grey,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'Receipt No. $receiptNo',
+            style: pw.TextStyle(
+              fontSize: 13,
+              color: PdfColors.grey600,
               fontWeight: pw.FontWeight.bold,
             ),
           ),

@@ -1,4 +1,4 @@
-package com.example.store
+package com.cadmil.appname
 
 import io.flutter.embedding.android.FlutterActivity
 
