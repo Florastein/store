@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:store/repositories/cart_repository.dart';
 import 'package:store/repositories/product_repository.dart';
 import 'package:store/models/products_model.dart';
@@ -528,188 +534,420 @@ class _OrderSummaryState extends State<_OrderSummary> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                controller: controller,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 50,
-                        height: 5,
-                        margin: const EdgeInsets.only(bottom: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 50,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                  ),
 
-                    Center(
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: controller,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Receipt',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Receipt',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  shopName.isNotEmpty ? shopName : '...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            shopName.isNotEmpty ? shopName : '...',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w600,
+
+                          const SizedBox(height: 28),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Customer Name',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    customerName,
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'ID',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    customerId,
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 6),
+                          const _DashedLine(),
+
+                          const SizedBox(height: 32),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'ITEMS',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                'Price',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const _DashedLine(),
+
+                          const SizedBox(height: 12),
+
+                          ...widget.items.map(
+                            (item) => _ReceiptItem(
+                              name: item.product.name,
+                              price: item.product.price ?? 0.0,
+                              qty: item.quantity,
                             ),
                           ),
+
+                          const SizedBox(height: 40),
+                          const _DashedLine(),
+
+                          const SizedBox(height: 8),
+
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total Amount',
+                                    style: GoogleFonts.dmSans(fontSize: 18),
+                                  ),
+                                  Text(
+                                    '₵ ${totalPrice.toStringAsFixed(2)}',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              const Text(
+                                'DATE & TIME',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                formattedDate,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              const SizedBox(height: 8),
+                              Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'store',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 164,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.withValues(
+                                        alpha: 0.18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.max,
+                              mainAxisAlignment: .spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () => _shareReceipt(
+                                    shopName: shopName,
+                                    customerName: customerName,
+                                    customerId: customerId,
+                                    totalPrice: totalPrice,
+                                    formattedDate: formattedDate,
+                                    items: widget.items,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.all(16.0),
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.42,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.labelPrimary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Share",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    padding: EdgeInsets.all(16.0),
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.42,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.labelPrimary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "Close",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 10),
                         ],
                       ),
                     ),
-
-                    const SizedBox(height: 28),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Customer Name',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              customerName,
-                              style: GoogleFonts.dmSans(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'ID',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 10,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              customerId,
-                              style: GoogleFonts.dmSans(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 6),
-                    const _DashedLine(),
-
-                    const SizedBox(height: 32),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'ITEMS',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Text(
-                          'Price',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const _DashedLine(),
-
-                    const SizedBox(height: 12),
-
-                    ...widget.items.map(
-                      (item) => _ReceiptItem(
-                        name: item.product.name,
-                        price: item.product.price ?? 0.0,
-                        qty: item.quantity,
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-                    const _DashedLine(),
-
-                    const SizedBox(height: 16),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total Amount',
-                          style: GoogleFonts.dmSans(fontSize: 18),
-                        ),
-                        Text(
-                          '₵ ${totalPrice.toStringAsFixed(2)}',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    const Text(
-                      'DATE & TIME',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(formattedDate, style: const TextStyle(fontSize: 13)),
-
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.labelPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: () {
-                          context.read<CartRepository>().clear();
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          "Done",
-                          style: GoogleFonts.poppins(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Future<void> _shareReceipt({
+    required String shopName,
+    required String customerName,
+    required String customerId,
+    required double totalPrice,
+    required String formattedDate,
+    required List<CartItem> items,
+  }) async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Text(
+            'Receipt',
+            style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            shopName.isNotEmpty ? shopName : '...',
+            style: pw.TextStyle(
+              fontSize: 16,
+              color: PdfColors.grey,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 24),
+
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'Customer Name',
+                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    customerName,
+                    style: const pw.TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text(
+                    'ID',
+                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text(customerId, style: const pw.TextStyle(fontSize: 18)),
+                ],
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 24),
+          pw.Divider(),
+          pw.SizedBox(height: 8),
+
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'ITEMS',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.Text(
+                'Price',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          pw.Divider(),
+
+          ...items.map(
+            (item) => pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Expanded(
+                    child: pw.Text(
+                      item.product.name,
+                      style: const pw.TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  pw.Text(
+                    '₵ ${(item.product.price ?? 0.0).toStringAsFixed(2)}',
+                    style: const pw.TextStyle(fontSize: 14),
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Text(
+                    'x${item.quantity}',
+                    style: pw.TextStyle(fontSize: 14, color: PdfColors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          pw.SizedBox(height: 16),
+          pw.Divider(),
+          pw.SizedBox(height: 8),
+
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Total Amount', style: const pw.TextStyle(fontSize: 18)),
+              pw.Text(
+                '₵ ${totalPrice.toStringAsFixed(2)}',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 24),
+
+          pw.Text(
+            'DATE & TIME',
+            style: pw.TextStyle(fontSize: 11, color: PdfColors.grey),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(formattedDate, style: const pw.TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+
+    final bytes = await doc.save();
+    final dir = await getTemporaryDirectory();
+    final file = File(
+      '${dir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
+    await file.writeAsBytes(bytes);
+
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'application/pdf')],
+        text: 'Receipt',
+      ),
     );
   }
 }
@@ -732,15 +970,15 @@ class _ReceiptItem extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name, style: const TextStyle(fontSize: 16)),
+          Text(name, style: GoogleFonts.dmSans(fontSize: 14)),
           Row(
             children: [
               Text(
                 '₵ ${price.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 16),
+                style: GoogleFonts.dmSans(fontSize: 14),
               ),
               const SizedBox(width: 8),
-              Text('x$qty', style: const TextStyle(color: Colors.grey)),
+              Text('x$qty', style: GoogleFonts.dmSans(color: Colors.grey)),
             ],
           ),
         ],
