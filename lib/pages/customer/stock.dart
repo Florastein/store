@@ -117,23 +117,27 @@ class _StockPageState extends State<StockPage> {
                     final displayed = _searchQuery.trim().isEmpty
                         ? products
                         : products
-                            .where(
-                              (p) => p.name
-                                  .toLowerCase()
-                                  .contains(_searchQuery.trim().toLowerCase()),
-                            )
-                            .toList();
-                    
+                              .where(
+                                (p) => p.name.toLowerCase().contains(
+                                  _searchQuery.trim().toLowerCase(),
+                                ),
+                              )
+                              .toList();
+
                     if (productRepo.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     if (productRepo.error != null) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               productRepo.error!,
@@ -144,13 +148,17 @@ class _StockPageState extends State<StockPage> {
                         ),
                       );
                     }
-                    
+
                     if (displayed.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+                            const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'No products found',
@@ -235,6 +243,7 @@ class _StockPageState extends State<StockPage> {
   }
 
   Widget _buildProductCard(StockItem product) {
+    final badge = _buildBadge(product);
     return GestureDetector(
       onTap: () {
         _showProductModal(product);
@@ -311,7 +320,9 @@ class _StockPageState extends State<StockPage> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    context.read<ProductRepository>().remove(product.id);
+                                    context.read<ProductRepository>().remove(
+                                      product.id,
+                                    );
                                   },
                                   child: const HugeIcon(
                                     icon: HugeIcons.strokeRoundedDelete04,
@@ -349,47 +360,48 @@ class _StockPageState extends State<StockPage> {
               ],
             ),
             // Status badge
-            if (product.status != StockStatus.normal)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: product.status == StockStatus.lowStock
-                        ? const Color(0xFFFFD700)
-                        : Colors.red,
-                  ),
-                  child: Text(
-                    product.status == StockStatus.lowStock ? '⚠' : '●',
-                    style: const TextStyle(fontSize: 8),
-                  ),
-                ),
-              ),
-            // Status label
-            if (product.status != StockStatus.normal)
-              Positioned(
-                top: 6,
-                left: 6,
-                child: Text(
-                  product.status == StockStatus.lowStock
-                      ? 'Low on stock'
-                      : 'Out of stock',
-                  style: GoogleFonts.poppins(
-                    fontSize: 6,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
+            if (badge != null) Positioned(top: 6, right: 6, child: badge),
           ],
         ),
       ),
     );
+  }
+
+  Widget? _buildBadge(StockItem product) {
+    if (product.status == StockStatus.outOfStock) {
+      return _badge('Out of stock', Colors.red);
+    }
+    if (product.status == StockStatus.lowStock) {
+      return _badge('Low on stock', Colors.yellow);
+    }
+    if (_isExpiryDue(product)) {
+      return _badge('Expiry due', Colors.black);
+    }
+    return null;
+  }
+
+  Widget _badge(String label, Color dotColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 6,
+            fontWeight: FontWeight.w500,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text('●', style: GoogleFonts.poppins(fontSize: 12, color: dotColor)),
+      ],
+    );
+  }
+
+  bool _isExpiryDue(StockItem product) {
+    final expiry = product.expiryDate;
+    if (expiry == null) return false;
+    return expiry.difference(DateTime.now()).inDays <= 30;
   }
 
   void _showProductModal(StockItem product) {
@@ -522,7 +534,7 @@ class _StockPageState extends State<StockPage> {
                             ),
                             const SizedBox(height: 20),
                           ],
-                           // Quantity input
+                          // Quantity input
                           Text(
                             'Quantity (max ${product.quantity})',
                             style: GoogleFonts.poppins(
@@ -607,9 +619,14 @@ class _StockPageState extends State<StockPage> {
                                         int.tryParse(quantityController.text) ??
                                         1;
                                     if (qty <= 0) return;
-                                    final actualQty = qty > product.quantity ? product.quantity : qty;
+                                    final actualQty = qty > product.quantity
+                                        ? product.quantity
+                                        : qty;
                                     // ── Actually add to the cart ──
-                                    context.read<CartRepository>().addItem(product, actualQty);
+                                    context.read<CartRepository>().addItem(
+                                      product,
+                                      actualQty,
+                                    );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(

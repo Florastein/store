@@ -6,31 +6,31 @@ import 'package:store/models/products_model.dart';
 
 class ProductRepository extends ChangeNotifier {
   ProductRepository._();
-  
+
   static final ProductRepository instance = ProductRepository._();
-  
+
   static const String _storageKey = 'products';
   List<StockItem> _products = [];
   bool _isLoading = false;
   String? _error;
-  
+
   List<StockItem> get products => _products;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
+
   int get nextId => _products.isEmpty
       ? 1
       : _products.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1;
-  
+
   Future<void> loadProducts() async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
-      
+
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
-      
+
       if (jsonString != null) {
         final List<dynamic> jsonList = jsonDecode(jsonString);
         _products = jsonList.map((json) => StockItem.fromJson(json)).toList();
@@ -38,7 +38,7 @@ class ProductRepository extends ChangeNotifier {
         _products = _getDefaultProducts();
         await _saveProducts();
       }
-      
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -48,7 +48,7 @@ class ProductRepository extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> _saveProducts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -58,17 +58,17 @@ class ProductRepository extends ChangeNotifier {
       debugPrint('Failed to save products: $e');
     }
   }
-  
+
   void add(StockItem item) {
     _products = [..._products, item];
     _saveProducts();
     notifyListeners();
   }
-  
+
   void updateQuantity(int id, int newQuantity) {
     final index = _products.indexWhere((p) => p.id == id);
     if (index < 0) return;
-    
+
     final updated = _products[index].copyWith(
       quantity: newQuantity,
       status: _deriveStatus(newQuantity),
@@ -77,13 +77,13 @@ class ProductRepository extends ChangeNotifier {
     _saveProducts();
     notifyListeners();
   }
-  
+
   void remove(int id) {
     _products = _products.where((p) => p.id != id).toList();
     _saveProducts();
     notifyListeners();
   }
-  
+
   void replace(StockItem updated) {
     final index = _products.indexWhere((p) => p.id == updated.id);
     if (index < 0) return;
@@ -91,7 +91,7 @@ class ProductRepository extends ChangeNotifier {
     _saveProducts();
     notifyListeners();
   }
-  
+
   StockItem? findByBarcode(String barcode) {
     try {
       return _products.firstWhere((p) => p.barcode == barcode);
@@ -99,7 +99,7 @@ class ProductRepository extends ChangeNotifier {
       return null;
     }
   }
-  
+
   StockItem? findById(int id) {
     try {
       return _products.firstWhere((p) => p.id == id);
@@ -107,31 +107,34 @@ class ProductRepository extends ChangeNotifier {
       return null;
     }
   }
-  
+
   static StockStatus _deriveStatus(int quantity) {
     if (quantity == 0) return StockStatus.outOfStock;
     if (quantity <= 10) return StockStatus.lowStock;
     return StockStatus.normal;
   }
-  
+
   List<StockItem> _getDefaultProducts() {
     return [
       StockItem(
         id: 1,
         name: 'KitKat',
         quantity: 80,
-        image: 'https://via.placeholder.com/120?text=KitKat',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_6Ib8mvzzQphNv38JzfJJNmY_ODGdzOBgHDG45N5R4Q&s=10',
         status: StockStatus.normal,
         barcode: '5000159402974',
         price: 2.50,
         expiryDate: DateTime(2025, 12, 31),
-        description: 'Crispy wafer bar with chocolate coating. Perfect for a quick snack.',
+        description:
+            'Crispy wafer bar with chocolate coating. Perfect for a quick snack.',
       ),
       StockItem(
         id: 2,
         name: "Lay's",
         quantity: 200,
-        image: 'https://via.placeholder.com/120?text=Lays',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgczredDV4jryfxPc6oxJo5FOcdkPHrlANXXYUdALByg&s=10',
         status: StockStatus.normal,
         barcode: '8901072100983',
         price: 1.50,
@@ -142,7 +145,8 @@ class ProductRepository extends ChangeNotifier {
         id: 3,
         name: 'Pepsi',
         quantity: 6,
-        image: 'https://via.placeholder.com/120?text=Pepsi',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6XyvVwdEGewdBvALs-JzE--U0oSTFRQBlHqWHunoA7w&s=10',
         status: StockStatus.lowStock,
         barcode: '5449000131805',
         price: 1.20,
@@ -153,18 +157,21 @@ class ProductRepository extends ChangeNotifier {
         id: 4,
         name: 'Nutella',
         quantity: 0,
-        image: 'https://via.placeholder.com/120?text=Nutella',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqC-zPfrAFc-XXhHqoMSKDYgqwnNtJXUdcT0so6Ki-OQ&s=10',
         status: StockStatus.outOfStock,
         barcode: '8000500010620',
         price: 8.99,
         expiryDate: DateTime(2025, 9, 10),
-        description: 'Delicious hazelnut chocolate spread. Great for breakfast.',
+        description:
+            'Delicious hazelnut chocolate spread. Great for breakfast.',
       ),
       StockItem(
         id: 5,
         name: 'Cheetos',
         quantity: 80,
-        image: 'https://via.placeholder.com/120?text=Cheetos',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJhiQHg0RE2gDOFkCKcZnMs5UCMxd7vxHKwYYNN18Izg&s=10',
         status: StockStatus.normal,
         barcode: '8901063032033',
         price: 1.75,
@@ -175,7 +182,8 @@ class ProductRepository extends ChangeNotifier {
         id: 6,
         name: 'Oreo',
         quantity: 50,
-        image: 'https://via.placeholder.com/120?text=Oreo',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbDV2Lw-1P5ahsSpaKnCaVC0N4CfHiPUIsGtTikiZC4w&s=10',
         status: StockStatus.normal,
         barcode: '7622210449283',
         price: 3.50,
@@ -186,7 +194,8 @@ class ProductRepository extends ChangeNotifier {
         id: 7,
         name: 'Bottle Water',
         quantity: 100,
-        image: 'https://via.placeholder.com/120?text=Water',
+        image:
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR64rFsx3G2W6TMgwVU4ilQu8Qa_6HOdnVvVVpr66a3Fg&s=10',
         status: StockStatus.normal,
         barcode: '5449000018246',
         price: 0.50,
@@ -202,7 +211,8 @@ class ProductRepository extends ChangeNotifier {
         barcode: '4902430401539',
         price: 5.99,
         expiryDate: DateTime(2026, 3, 20),
-        description: 'Advanced laundry detergent. Removes tough stains effectively.',
+        description:
+            'Advanced laundry detergent. Removes tough stains effectively.',
       ),
       StockItem(
         id: 9,
