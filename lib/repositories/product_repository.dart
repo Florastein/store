@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:store/models/products_model.dart';
 
@@ -13,10 +14,17 @@ class ProductRepository extends ChangeNotifier {
   List<StockItem> _products = [];
   bool _isLoading = false;
   String? _error;
+  final Map<int, _CachedProductImage> _imageCache = {};
+  final Map<int, String> _imageRequestsInFlight = {};
 
   List<StockItem> get products => _products;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  Uint8List? imageBytesFor(int productId, String imageUrl) {
+    final cachedImage = _imageCache[productId];
+    return cachedImage?.url == imageUrl ? cachedImage?.bytes : null;
+  }
 
   int get nextId => _products.isEmpty
       ? 1
@@ -33,7 +41,13 @@ class ProductRepository extends ChangeNotifier {
 
       if (jsonString != null) {
         final List<dynamic> jsonList = jsonDecode(jsonString);
-        _products = jsonList.map((json) => StockItem.fromJson(json)).toList();
+        final storedProducts = jsonList
+            .map((json) => StockItem.fromJson(json))
+            .toList();
+        _products = storedProducts.map(_migrateImageUrl).toList();
+        if (!_sameImageUrls(storedProducts, _products)) {
+          await _saveProducts();
+        }
       } else {
         _products = _getDefaultProducts();
         await _saveProducts();
@@ -46,6 +60,38 @@ class ProductRepository extends ChangeNotifier {
       _error = 'Failed to load products: $e';
       _products = _getDefaultProducts();
       notifyListeners();
+    }
+    loadProductImages();
+  }
+
+  void loadProductImages() {
+    for (final product in _products) {
+      _fetchImage(product.id, product.image);
+    }
+  }
+
+  Future<void> _fetchImage(int productId, String url) async {
+    if (_imageCache[productId]?.url == url ||
+        _imageRequestsInFlight[productId] == url) {
+      return;
+    }
+    _imageRequestsInFlight[productId] = url;
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        // A product can be updated while its previous image is downloading.
+        // Only publish bytes that still belong to its current URL.
+        if (findById(productId)?.image == url) {
+          _imageCache[productId] = _CachedProductImage(url, response.bodyBytes);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load image for product $productId: $e');
+    } finally {
+      if (_imageRequestsInFlight[productId] == url) {
+        _imageRequestsInFlight.remove(productId);
+      }
     }
   }
 
@@ -63,6 +109,7 @@ class ProductRepository extends ChangeNotifier {
     _products = [..._products, item];
     _saveProducts();
     notifyListeners();
+    _fetchImage(item.id, item.image);
   }
 
   void updateQuantity(int id, int newQuantity) {
@@ -80,6 +127,8 @@ class ProductRepository extends ChangeNotifier {
 
   void remove(int id) {
     _products = _products.where((p) => p.id != id).toList();
+    _imageCache.remove(id);
+    _imageRequestsInFlight.remove(id);
     _saveProducts();
     notifyListeners();
   }
@@ -87,9 +136,14 @@ class ProductRepository extends ChangeNotifier {
   void replace(StockItem updated) {
     final index = _products.indexWhere((p) => p.id == updated.id);
     if (index < 0) return;
+    final previous = _products[index];
     _products = List<StockItem>.from(_products)..[index] = updated;
+    if (previous.image != updated.image) {
+      _imageCache.remove(updated.id);
+    }
     _saveProducts();
     notifyListeners();
+    _fetchImage(updated.id, updated.image);
   }
 
   StockItem? findByBarcode(String barcode) {
@@ -113,6 +167,24 @@ class ProductRepository extends ChangeNotifier {
     if (quantity <= 10) return StockStatus.lowStock;
     return StockStatus.normal;
   }
+
+  static StockItem _migrateImageUrl(StockItem product) {
+    const legacyPlaceholder = 'https://via.placeholder.com/120?text=';
+    if (!product.image.startsWith(legacyPlaceholder)) return product;
+
+    return product.copyWith(
+      image: product.image.replaceFirst(
+        legacyPlaceholder,
+        'https://placehold.co/120x120?text=',
+      ),
+    );
+  }
+
+  static bool _sameImageUrls(List<StockItem> first, List<StockItem> second) =>
+      first.length == second.length &&
+      Iterable<int>.generate(
+        first.length,
+      ).every((index) => first[index].image == second[index].image);
 
   List<StockItem> _getDefaultProducts() {
     return [
@@ -206,7 +278,7 @@ class ProductRepository extends ChangeNotifier {
         id: 8,
         name: 'Tide plus',
         quantity: 30,
-        image: 'https://via.placeholder.com/120?text=Tide',
+        image: 'https://placehold.co/120x120?text=Tide',
         status: StockStatus.normal,
         barcode: '4902430401539',
         price: 5.99,
@@ -218,7 +290,7 @@ class ProductRepository extends ChangeNotifier {
         id: 9,
         name: 'Vanish gold',
         quantity: 19,
-        image: 'https://via.placeholder.com/120?text=Vanish',
+        image: 'https://placehold.co/120x120?text=Vanish',
         status: StockStatus.normal,
         barcode: '8717644489318',
         price: 3.99,
@@ -229,7 +301,7 @@ class ProductRepository extends ChangeNotifier {
         id: 10,
         name: 'Colgate',
         quantity: 0,
-        image: 'https://via.placeholder.com/120?text=Colgate',
+        image: 'https://placehold.co/120x120?text=Colgate',
         status: StockStatus.outOfStock,
         barcode: '8901072100099',
         price: 1.99,
@@ -240,7 +312,7 @@ class ProductRepository extends ChangeNotifier {
         id: 11,
         name: 'Dove',
         quantity: 5,
-        image: 'https://via.placeholder.com/120?text=Dove',
+        image: 'https://placehold.co/120x120?text=Dove',
         status: StockStatus.lowStock,
         barcode: '8717644481152',
         price: 2.50,
@@ -251,7 +323,7 @@ class ProductRepository extends ChangeNotifier {
         id: 12,
         name: 'Lifebuoy',
         quantity: 0,
-        image: 'https://via.placeholder.com/120?text=Lifebuoy',
+        image: 'https://placehold.co/120x120?text=Lifebuoy',
         status: StockStatus.outOfStock,
         barcode: '8901072100181',
         price: 1.50,
@@ -262,7 +334,7 @@ class ProductRepository extends ChangeNotifier {
         id: 13,
         name: 'Sunsilk',
         quantity: 25,
-        image: 'https://via.placeholder.com/120?text=Sunsilk',
+        image: 'https://placehold.co/120x120?text=Sunsilk',
         status: StockStatus.normal,
         barcode: '8901072100044',
         price: 3.75,
@@ -273,7 +345,7 @@ class ProductRepository extends ChangeNotifier {
         id: 14,
         name: 'Head & Shoulders',
         quantity: 0,
-        image: 'https://via.placeholder.com/120?text=H%26S',
+        image: 'https://placehold.co/120x120?text=H%26S',
         status: StockStatus.outOfStock,
         barcode: '4902430201092',
         price: 4.99,
@@ -284,7 +356,7 @@ class ProductRepository extends ChangeNotifier {
         id: 15,
         name: 'Pantene',
         quantity: 10,
-        image: 'https://via.placeholder.com/120?text=Pantene',
+        image: 'https://placehold.co/120x120?text=Pantene',
         status: StockStatus.lowStock,
         barcode: '4902430201085',
         price: 4.50,
@@ -295,7 +367,7 @@ class ProductRepository extends ChangeNotifier {
         id: 16,
         name: 'Fair & Lovely',
         quantity: 0,
-        image: 'https://via.placeholder.com/120?text=F%26L',
+        image: 'https://placehold.co/120x120?text=F%26L',
         status: StockStatus.outOfStock,
         barcode: '8901072100105',
         price: 6.99,
@@ -304,4 +376,11 @@ class ProductRepository extends ChangeNotifier {
       ),
     ];
   }
+}
+
+class _CachedProductImage {
+  const _CachedProductImage(this.url, this.bytes);
+
+  final String url;
+  final Uint8List bytes;
 }

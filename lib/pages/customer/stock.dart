@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:provider/provider.dart';
 import 'package:store/repositories/cart_repository.dart';
 import 'package:store/repositories/product_repository.dart';
+import 'package:store/widgets/product_image.dart';
 import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
@@ -272,26 +273,21 @@ class _StockPageState extends State<StockPage> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(6),
-                            topRight: Radius.circular(6),
-                          ),
-                          child: Image.network(
-                            product.image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(Icons.image_not_supported),
-                                ),
-                              );
-                            },
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(6),
+                              topRight: Radius.circular(6),
+                            ),
+                            child: _ProductImage(product: product),
                           ),
                         ),
                         if (product.status != StockStatus.normal)
-                          Container(color: Colors.white.withValues(alpha: 0.4)),
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -672,6 +668,17 @@ class _StockPageState extends State<StockPage> {
         );
       },
     );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.product});
+
+  final StockItem product;
+
+  @override
+  Widget build(BuildContext context) {
+    return ProductImage(product: product);
   }
 }
 

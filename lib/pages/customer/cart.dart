@@ -11,9 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:store/repositories/cart_repository.dart';
 import 'package:store/repositories/product_repository.dart';
-import 'package:store/models/products_model.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:store/widgets/product_image.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -233,18 +233,7 @@ class _CartItemCard extends StatelessWidget {
           // Product image
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              item.product.image,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 60,
-                height: 60,
-                color: Colors.grey[200],
-                child: const Icon(Icons.image_not_supported, size: 24),
-              ),
-            ),
+            child: ProductImage(product: item.product, width: 60, height: 60),
           ),
           const SizedBox(width: 12),
 

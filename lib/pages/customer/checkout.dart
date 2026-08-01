@@ -9,6 +9,7 @@ import 'package:store/repositories/cart_repository.dart';
 import 'package:store/repositories/product_repository.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/pages/customer/cart.dart';
+import 'package:store/widgets/product_image.dart';
 
 class _CheckoutConstants {
   static const double bottomRadius = 45.0;
@@ -162,9 +163,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
 
   void _showProductPicker(BuildContext context) {
     final products = context.read<ProductRepository>().products;
+    final sourceContext = context;
 
     showModalBottomSheet(
-      context: context,
+      context: sourceContext,
       backgroundColor: AppColors.backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -228,7 +230,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                         product: product,
                         onTap: () {
                           Navigator.pop(ctx);
-                          _showAddToCartSheet(context, product);
+                          _showAddToCartSheet(sourceContext, product);
                         },
                       );
                     },
@@ -286,17 +288,10 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      product.image,
+                    child: ProductImage(
+                      product: product,
                       width: 56,
                       height: 56,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 56,
-                        height: 56,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported, size: 24),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -508,17 +503,11 @@ class _ProductPickerItem extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                product.image,
+              child: ProductImage(
+                product: product,
                 width: 48,
                 height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 48,
-                  height: 48,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported, size: 20),
-                ),
+                iconSize: 20,
               ),
             ),
             const SizedBox(width: 12),

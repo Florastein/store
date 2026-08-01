@@ -5,6 +5,7 @@ import 'package:store/models/products_model.dart';
 import 'package:store/repositories/product_repository.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import 'package:store/widgets/product_image.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final StockItem product;
@@ -82,20 +83,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          Image.network(
-                            widget.product.image,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: 48,
-                                  ),
-                                ),
-                              );
-                            },
+                          SizedBox.expand(
+                            child: ProductImage(
+                              product: widget.product,
+                              iconSize: 48,
+                            ),
                           ),
                           if (widget.product.status != StockStatus.normal)
                             Container(
@@ -293,7 +285,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     child: GestureDetector(
                       onTap: () {
                         // Remove from the reactive product store
-                        context.read<ProductRepository>().remove(widget.product.id);
+                        context.read<ProductRepository>().remove(
+                          widget.product.id,
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
