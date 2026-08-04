@@ -53,6 +53,7 @@ dependencies:
   share_plus: ^11.0.0
   path_provider: ^2.1.5
   http: ^1.6.0
+  firebase_core: ^4.13.0
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:store/repositories/product_repository.dart';
 import 'package:store/repositories/cart_repository.dart';
 import 'package:store/pages/customer/dashboard.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,8 @@ void main() async {
     cartRepository.loadCart(),
   ]);
 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(
     MultiProvider(
       providers: [
@@ -25,6 +29,8 @@ void main() async {
     ),
   );
 }
+
+// ...
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
