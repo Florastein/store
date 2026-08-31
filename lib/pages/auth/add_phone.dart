@@ -105,8 +105,7 @@ class _AddPhoneState extends State<AddPhone> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.2),
-      builder: (context) {
-        return Dialog(
+      builder: (context) => Dialog(
           backgroundColor: Colors.white.withValues(alpha: 0.35),
           elevation: 0,
           insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -125,7 +124,6 @@ class _AddPhoneState extends State<AddPhone> {
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.28),
-                    width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -140,10 +138,10 @@ class _AddPhoneState extends State<AddPhone> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(
-                        left: 8.0,
-                        right: 8.0,
-                        top: 8.0,
-                        bottom: 24.0,
+                        left: 8,
+                        right: 8,
+                        top: 8,
+                        bottom: 24,
                       ),
                       child: Text(
                         'Is this correct?',
@@ -160,7 +158,7 @@ class _AddPhoneState extends State<AddPhone> {
                         vertical: 16,
                         horizontal: 16,
                       ),
-                      margin: const EdgeInsets.only(bottom: 19.0),
+                      margin: const EdgeInsets.only(bottom: 19),
                       decoration: BoxDecoration(
                         color: AppColors.gray.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(40),
@@ -214,7 +212,6 @@ class _AddPhoneState extends State<AddPhone> {
                             );
                           },
                           color: AppColors.buttonPrimary,
-                          textColor: Colors.white,
                           width: 168,
                           height: 54,
                         ),
@@ -225,8 +222,7 @@ class _AddPhoneState extends State<AddPhone> {
               ),
             ),
           ),
-        );
-      },
+        ),
     );
   }
 
@@ -238,14 +234,12 @@ class _AddPhoneState extends State<AddPhone> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          builder: (context, constraints) => SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
@@ -351,7 +345,6 @@ class _AddPhoneState extends State<AddPhone> {
                             onPressed: _onNextPressed,
                             color: AppColors.buttonPrimary,
                             width: MediaQuery.sizeOf(context).width * 0.9,
-                            height: 62,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -360,19 +353,16 @@ class _AddPhoneState extends State<AddPhone> {
                   ),
                 ),
               ),
-            );
-          },
+            ),
         ),
       ),
     );
-  }
 
   InputDecoration _buildInputDecoration({
     required String hintText,
     required TextEditingController controller,
     required FocusNode focusNode,
-  }) {
-    return InputDecoration(
+  }) => InputDecoration(
       hintText: hintText,
       hintStyle: GoogleFonts.poppins(
         color: const Color(0xFFBCBCBC),
@@ -398,20 +388,19 @@ class _AddPhoneState extends State<AddPhone> {
           : null,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD1D1D6), width: 1),
+        borderSide: const BorderSide(color: Color(0xFFD1D1D6)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.black, width: 1.5),
+        borderSide: const BorderSide(width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1),
+        borderSide: const BorderSide(color: AppColors.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.error, width: 1.5),
       ),
     );
-  }
 }

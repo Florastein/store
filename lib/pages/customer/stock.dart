@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:provider/provider.dart';
-import 'package:store/repositories/cart_repository.dart';
-import 'package:store/repositories/product_repository.dart';
-import 'package:store/widgets/product_image.dart';
-import 'package:store/models/products_model.dart';
-import 'package:store/theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../../models/products_model.dart';
+import '../../providers/repositories.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/product_image.dart';
 
-class StockPage extends StatefulWidget {
+class StockPage extends ConsumerStatefulWidget {
   const StockPage({super.key});
 
   @override
-  State<StockPage> createState() => _StockPageState();
+  ConsumerState<StockPage> createState() => _StockPageState();
 }
 
-class _StockPageState extends State<StockPage> {
+class _StockPageState extends ConsumerState<StockPage> {
   String _searchQuery = '';
   final String _selectedFilter = 'all';
 
   @override
   Widget build(BuildContext context) {
+    final productRepo = ref.watch(productRepositoryNotifierProvider);
+    final products = productRepo.when(
+      data: (repo) => repo.products,
+      loading: () => <StockItem>[],
+      error: (_, _) => <StockItem>[],
+    );
+    final error = productRepo.error;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
@@ -80,12 +87,11 @@ class _StockPageState extends State<StockPage> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      suffixIcon: Padding(
-                        padding: const EdgeInsets.all(12),
+                      suffixIcon: const Padding(
+                        padding: EdgeInsets.all(12),
                         child: HugeIcon(
                           icon: HugeIcons.strokeRoundedSearch01,
-                          size: 24,
-                          color: const Color(0xFF8E8E93),
+                          color: Color(0xFF8E8E93),
                         ),
                       ),
                     ),
@@ -112,9 +118,8 @@ class _StockPageState extends State<StockPage> {
               const SizedBox(height: 16),
               // Products grid – rebuilds whenever the product list changes
               Expanded(
-                child: Consumer<ProductRepository>(
-                  builder: (context, productRepo, _) {
-                    final products = productRepo.products;
+                child: productRepo.when(
+                  data: (repo) {
                     final displayed = _searchQuery.trim().isEmpty
                         ? products
                         : products
@@ -124,31 +129,6 @@ class _StockPageState extends State<StockPage> {
                                 ),
                               )
                               .toList();
-
-                    if (productRepo.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (productRepo.error != null) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              productRepo.error!,
-                              style: GoogleFonts.poppins(color: Colors.red),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
 
                     if (displayed.isEmpty) {
                       return Center(
@@ -198,13 +178,32 @@ class _StockPageState extends State<StockPage> {
                                 childAspectRatio: 0.75,
                               ),
                           itemCount: displayed.length,
-                          itemBuilder: (context, index) {
-                            return _buildProductCard(displayed[index]);
-                          },
+                          itemBuilder: (context, index) =>
+                              _buildProductCard(displayed[index]),
                         ),
                       ],
                     );
                   },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, _) => Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          error?.toString() ?? 'Error loading products',
+                          style: GoogleFonts.poppins(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -214,34 +213,33 @@ class _StockPageState extends State<StockPage> {
     );
   }
 
-  Widget _buildFilterButton(String label, String value, bool isSelected) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFAEAEB2)),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          HugeIcon(
-            icon: value == 'filter'
-                ? HugeIcons.strokeRoundedFilterHorizontal
-                : HugeIcons.strokeRoundedFilterVertical,
-            size: 16,
-            color: const Color(0xFF8E8E93),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.dmSans(
-              fontSize: 14,
+  Widget _buildFilterButton(String label, String value, bool isSelected) =>
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFAEAEB2)),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            HugeIcon(
+              icon: value == 'filter'
+                  ? HugeIcons.strokeRoundedFilterHorizontal
+                  : HugeIcons.strokeRoundedFilterVertical,
+              size: 16,
               color: const Color(0xFF8E8E93),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.dmSans(
+                fontSize: 14,
+                color: const Color(0xFF8E8E93),
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _buildProductCard(StockItem product) {
     final badge = _buildBadge(product);
@@ -279,7 +277,7 @@ class _StockPageState extends State<StockPage> {
                               topLeft: Radius.circular(6),
                               topRight: Radius.circular(6),
                             ),
-                            child: _ProductImage(product: product),
+                            child: ProductImage(product: product),
                           ),
                         ),
                         if (product.status != StockStatus.normal)
@@ -316,9 +314,9 @@ class _StockPageState extends State<StockPage> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    context.read<ProductRepository>().remove(
-                                      product.id,
-                                    );
+                                    ref
+                                        .read(productRepositoryProvider)
+                                        .remove(product.id);
                                   },
                                   child: const HugeIcon(
                                     icon: HugeIcons.strokeRoundedDelete04,
@@ -376,27 +374,27 @@ class _StockPageState extends State<StockPage> {
     return null;
   }
 
-  Widget _badge(String label, Color dotColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 6,
-            fontWeight: FontWeight.w500,
-            color: Colors.black,
-          ),
+  Widget _badge(String label, Color dotColor) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 6,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
         ),
-        const SizedBox(width: 4),
-        Text('●', style: GoogleFonts.poppins(fontSize: 12, color: dotColor)),
-      ],
-    );
-  }
+      ),
+      const SizedBox(width: 4),
+      Text('●', style: GoogleFonts.poppins(fontSize: 12, color: dotColor)),
+    ],
+  );
 
   bool _isExpiryDue(StockItem product) {
     final expiry = product.expiryDate;
-    if (expiry == null) return false;
+    if (expiry == null) {
+      return false;
+    }
     return expiry.difference(DateTime.now()).inDays <= 30;
   }
 
@@ -409,276 +407,268 @@ class _StockPageState extends State<StockPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(product.image),
-                  fit: BoxFit.cover,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(product.image),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Gradient overlay
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.white.withValues(alpha: 0.3),
+                      Colors.white.withValues(alpha: 0.7),
+                      Colors.white,
+                    ],
+                    stops: const [0.0, 0.3, 0.6, 1.0],
+                  ),
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Gradient overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.white.withValues(alpha: 0.3),
-                          Colors.white.withValues(alpha: 0.7),
-                          Colors.white,
-                        ],
-                        stops: const [0.0, 0.3, 0.6, 1.0],
+              // Content
+              SingleChildScrollView(
+                controller: scrollController,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  // Content
-                  SingleChildScrollView(
-                    controller: scrollController,
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 220),
+                      // Product name and price
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Handle bar
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0E0E0),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 220),
-                          // Product name and price
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  product.name,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2F2F2F),
-                                  ),
-                                ),
-                              ),
-                              if (product.price != null)
-                                Text(
-                                  '₵${product.price!.toStringAsFixed(2)}',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.navigationActive,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          // Expiry date
-                          if (product.expiryDate != null) ...[
-                            Text(
-                              'Expiry Date',
+                          Expanded(
+                            child: Text(
+                              product.name,
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF5E5E5E),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              DateFormat(
-                                'MMM d, y',
-                              ).format(product.expiryDate!),
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
                                 color: const Color(0xFF2F2F2F),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                          ],
-                          // Description
-                          if (product.description != null) ...[
+                          ),
+                          if (product.price != null)
                             Text(
-                              'Description',
+                              '₵${product.price!.toStringAsFixed(2)}',
                               style: GoogleFonts.poppins(
-                                fontSize: 12,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF5E5E5E),
+                                color: AppColors.navigationActive,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              product.description!,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                height: 1.5,
-                                color: const Color(0xFF2F2F2F),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                          // Quantity input
-                          Text(
-                            'Quantity (max ${product.quantity})',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF5E5E5E),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Expiry date
+                      if (product.expiryDate != null) ...[
+                        Text(
+                          'Expiry Date',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF5E5E5E),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          DateFormat('MMM d, y').format(product.expiryDate!),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: const Color(0xFF2F2F2F),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Description
+                      if (product.description != null) ...[
+                        Text(
+                          'Description',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF5E5E5E),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          product.description!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: const Color(0xFF2F2F2F),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                      // Quantity input
+                      Text(
+                        'Quantity (max ${product.quantity})',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF5E5E5E),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: quantityController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          _MaxValueFormatter(product.quantity),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: 'Enter quantity',
+                          hintStyle: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE0E0E0),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: quantityController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              _MaxValueFormatter(product.quantity),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: 'Enter quantity',
-                              hintStyle: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: const Color(0xFF8E8E93),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE0E0E0),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: AppColors.navigationActive,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Action buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFE0E0E0),
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Cancel',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF2F2F2F),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE0E0E0),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                final qty =
+                                    int.tryParse(quantityController.text) ?? 1;
+                                if (qty <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Quantity must be at least 1',
+                                        style: GoogleFonts.poppins(),
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final actualQty = qty > product.quantity
+                                    ? product.quantity
+                                    : qty;
+                                // ── Actually add to the cart ──
+                                ref
+                                    .read(cartRepositoryProvider)
+                                    .addItem(product, actualQty);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${product.name} ×$actualQty added to cart',
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
                                 ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
+                                decoration: BoxDecoration(
                                   color: AppColors.navigationActive,
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+                                child: Center(
+                                  child: Text(
+                                    'Add to Cart',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          // Action buttons
-                          Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: const Color(0xFFE0E0E0),
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        'Cancel',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2F2F2F),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    final qty =
-                                        int.tryParse(quantityController.text) ??
-                                        1;
-                                    if (qty <= 0) return;
-                                    final actualQty = qty > product.quantity
-                                        ? product.quantity
-                                        : qty;
-                                    // ── Actually add to the cart ──
-                                    context.read<CartRepository>().addItem(
-                                      product,
-                                      actualQty,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${product.name} ×$actualQty added to cart',
-                                          style: GoogleFonts.poppins(),
-                                        ),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-                                    Navigator.pop(context);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.navigationActive,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        'Add to Cart',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            );
-          },
-        );
-      },
+            ],
+          ),
+        ),
+      ),
     );
-  }
-}
-
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({required this.product});
-
-  final StockItem product;
-
-  @override
-  Widget build(BuildContext context) {
-    return ProductImage(product: product);
   }
 }
 
@@ -691,9 +681,13 @@ class _MaxValueFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (newValue.text.isEmpty) return newValue;
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
     final value = int.tryParse(newValue.text);
-    if (value == null) return oldValue;
+    if (value == null) {
+      return oldValue;
+    }
     if (value > maxValue) {
       return TextEditingValue(
         text: '$maxValue',

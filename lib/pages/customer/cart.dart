@@ -1,56 +1,48 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:store/repositories/cart_repository.dart';
-import 'package:store/repositories/product_repository.dart';
-import 'package:store/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:store/providers/repositories.dart';
+import 'package:store/repositories/interfaces/cart_repository.dart';
+import 'package:store/repositories/interfaces/product_repository.dart';
+import 'package:store/services/receipt_service.dart';
+import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/product_image.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends ConsumerWidget {
   const CartPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cartAsync = ref.watch(cartRepositoryNotifierProvider);
+    final productRepo = ref.read(productRepositoryProvider);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
-        child: Consumer<CartRepository>(
-          builder: (context, cartRepo, _) {
-            final cartItems = cartRepo.items;
-
-            if (cartRepo.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (cartRepo.error != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      cartRepo.error!,
-                      style: GoogleFonts.poppins(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+        child: cartAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.red,
                 ),
-              );
-            }
+                const SizedBox(height: 16),
+                Text(
+                  error.toString(),
+                  style: GoogleFonts.poppins(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          data: (cartRepo) {
+            final cartItems = cartRepo.items;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +136,10 @@ class CartPage extends StatelessWidget {
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final item = cartItems[index];
-                              return _CartItemCard(item: item);
+                              return _CartItemCard(
+                                item: item,
+                                productRepo: productRepo,
+                              );
                             },
                           ),
                         ),
@@ -166,8 +161,7 @@ class CartPage extends StatelessWidget {
 // ── Empty state ──────────────────────────────────────────────────────────────
 class _EmptyCartState extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
+  Widget build(BuildContext context) => Expanded(
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +169,6 @@ class _EmptyCartState extends StatelessWidget {
             SvgPicture.asset(
               'assets/images/empty_cart.svg',
               height: 180,
-              fit: BoxFit.contain,
             ),
             const SizedBox(height: 24),
             Text(
@@ -199,20 +192,22 @@ class _EmptyCartState extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Single cart item card ─────────────────────────────────────────────────────
-class _CartItemCard extends StatelessWidget {
-  const _CartItemCard({required this.item});
+class _CartItemCard extends ConsumerWidget {
+  const _CartItemCard({
+    required this.item,
+    required this.productRepo,
+  });
 
   final CartItem item;
+  final ProductRepository productRepo;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentStock =
-        ProductRepository.instance.findById(item.product.id)?.quantity ??
-        item.product.quantity;
+        productRepo.findById(item.product.id)?.quantity ?? item.product.quantity;
     final atMax = item.quantity >= currentStock;
 
     return Container(
@@ -269,7 +264,7 @@ class _CartItemCard extends StatelessWidget {
               _StepperButton(
                 icon: Icons.remove,
                 onTap: () {
-                  context.read<CartRepository>().updateQuantity(
+                  ref.read(cartRepositoryProvider).updateQuantity(
                     item.product.id,
                     item.quantity - 1,
                   );
@@ -290,7 +285,7 @@ class _CartItemCard extends StatelessWidget {
                 icon: Icons.add,
                 enabled: !atMax,
                 onTap: () {
-                  context.read<CartRepository>().updateQuantity(
+                  ref.read(cartRepositoryProvider).updateQuantity(
                     item.product.id,
                     item.quantity + 1,
                   );
@@ -303,7 +298,7 @@ class _CartItemCard extends StatelessWidget {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: () =>
-                context.read<CartRepository>().removeItem(item.product.id),
+                ref.read(cartRepositoryProvider).removeItem(item.product.id),
             child: const Icon(
               Icons.delete_outline_rounded,
               color: Colors.red,
@@ -329,8 +324,7 @@ class _StepperButton extends StatelessWidget {
   final bool enabled;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
         width: 28,
@@ -348,7 +342,6 @@ class _StepperButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Customer info field ───────────────────────────────────────────────────────
@@ -364,8 +357,7 @@ class _CustomerField extends StatelessWidget {
   final TextInputType? keyboardType;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
@@ -405,19 +397,18 @@ class _CustomerField extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
-class _OrderSummary extends StatefulWidget {
+class _OrderSummary extends ConsumerStatefulWidget {
   const _OrderSummary({required this.items});
 
   final List<CartItem> items;
 
   @override
-  State<_OrderSummary> createState() => _OrderSummaryState();
+  ConsumerState<_OrderSummary> createState() => _OrderSummaryState();
 }
 
-class _OrderSummaryState extends State<_OrderSummary> {
+class _OrderSummaryState extends ConsumerState<_OrderSummary> {
   bool _isActive = false;
   final TextEditingController _customerIdController = TextEditingController();
 
@@ -439,8 +430,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
       child: Column(
         children: [
@@ -464,7 +454,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                 ),
                 child: const Center(
                   child: Text(
-                    "Checkout",
+                    'Checkout',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -474,16 +464,17 @@ class _OrderSummaryState extends State<_OrderSummary> {
         ],
       ),
     );
-  }
 
   Future<void> _showReceipt() async {
     final prefs = await SharedPreferences.getInstance();
     final shopName = prefs.getString('shop_name') ?? '';
     final customerName = prefs.getString('customer_name') ?? '';
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     final customerId = _customerIdController.text.trim();
     final totalPrice = widget.items.fold<double>(
-      0.0,
+      0,
       (sum, item) => sum + (item.product.price ?? 0.0) * item.quantity,
     );
     final now = DateTime.now();
@@ -499,14 +490,12 @@ class _OrderSummaryState extends State<_OrderSummary> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
+      builder: (context) => DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.85,
           minChildSize: 0.6,
           maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Container(
+          builder: (_, controller) => Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -535,31 +524,22 @@ class _OrderSummaryState extends State<_OrderSummary> {
                           Center(
                             child: Column(
                               children: [
-                                Text(
+                                const Text(
                                   'Receipt',
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 Text(
                                   shopName.isNotEmpty ? shopName : '...',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.grey,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                /*SizedBox(height: 12),
-                                Text(
-                                  'Receipt No. $receiptNo',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),*/
                               ],
                             ),
                           ),
@@ -709,8 +689,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width,
                             child: Row(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: .spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 GestureDetector(
                                   onTap: () => _shareReceipt(
@@ -723,7 +702,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                     items: widget.items,
                                   ),
                                   child: Container(
-                                    padding: EdgeInsets.all(16.0),
+                                    padding: const EdgeInsets.all(16),
                                     width:
                                         MediaQuery.of(context).size.width *
                                         0.42,
@@ -733,7 +712,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        "Share",
+                                        'Share',
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           color: AppColors.white,
@@ -746,7 +725,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                 GestureDetector(
                                   onTap: () => Navigator.of(context).pop(),
                                   child: Container(
-                                    padding: EdgeInsets.all(16.0),
+                                    padding: const EdgeInsets.all(16),
                                     width:
                                         MediaQuery.of(context).size.width *
                                         0.42,
@@ -756,7 +735,7 @@ class _OrderSummaryState extends State<_OrderSummary> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        "Close",
+                                        'Close',
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           color: AppColors.white,
@@ -769,17 +748,15 @@ class _OrderSummaryState extends State<_OrderSummary> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                         ],
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+        ),
     );
   }
 
@@ -792,170 +769,15 @@ class _OrderSummaryState extends State<_OrderSummary> {
     required String receiptNo,
     required List<CartItem> items,
   }) async {
-    final dmSansRegular = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/DMSans-Regular.ttf'),
-    );
-    final dmSansBold = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/DMSans-Bold.ttf'),
-    );
-    final notoSans = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/NotoSans.ttf'),
-    );
-    final doc = pw.Document(
-      theme: pw.ThemeData.withFont(
-        base: dmSansRegular,
-        bold: dmSansBold,
-        fontFallback: [notoSans],
-      ),
-    );
-
-    doc.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          pw.Text(
-            'Receipt',
-            style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.SizedBox(height: 6),
-          pw.Text(
-            shopName.isNotEmpty ? shopName : '...',
-            style: pw.TextStyle(
-              fontSize: 16,
-              color: PdfColors.grey,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 8),
-          pw.Text(
-            'Receipt No. $receiptNo',
-            style: pw.TextStyle(
-              fontSize: 13,
-              color: PdfColors.grey600,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 24),
-
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'Customer Name',
-                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
-                  ),
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    customerName,
-                    style: const pw.TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text(
-                    'ID',
-                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey600),
-                  ),
-                  pw.SizedBox(height: 4),
-                  pw.Text(customerId, style: const pw.TextStyle(fontSize: 18)),
-                ],
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 24),
-          pw.Divider(),
-          pw.SizedBox(height: 8),
-
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                'ITEMS',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                'Price',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          pw.Divider(),
-
-          ...items.map(
-            (item) => pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(vertical: 4),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Expanded(
-                    child: pw.Text(
-                      '${item.product.name} x${item.quantity}',
-                      style: const pw.TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  pw.Text(
-                    'GH₵ ${((item.product.price ?? 0.0) * item.quantity).toStringAsFixed(2)}',
-                    style: const pw.TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          pw.SizedBox(height: 16),
-          pw.Divider(),
-          pw.SizedBox(height: 8),
-
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text('Total Amount', style: const pw.TextStyle(fontSize: 18)),
-              pw.Text(
-                'GH₵ ${totalPrice.toStringAsFixed(2)}',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 24),
-
-          pw.Text(
-            'DATE & TIME',
-            style: pw.TextStyle(fontSize: 11, color: PdfColors.grey),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(formattedDate, style: const pw.TextStyle(fontSize: 13)),
-        ],
-      ),
-    );
-
-    final bytes = await doc.save();
-    final dir = await getTemporaryDirectory();
-    final file = File(
-      '${dir.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.pdf',
-    );
-    await file.writeAsBytes(bytes);
-
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(file.path, mimeType: 'application/pdf')],
-        text: 'Receipt',
-      ),
+    final receiptService = ReceiptService();
+    await receiptService.generateAndShareReceipt(
+      shopName: shopName,
+      customerName: customerName,
+      customerId: customerId,
+      totalPrice: totalPrice,
+      formattedDate: formattedDate,
+      receiptNo: receiptNo,
+      items: items,
     );
   }
 }
@@ -972,8 +794,7 @@ class _ReceiptItem extends StatelessWidget {
   final int qty;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -982,9 +803,9 @@ class _ReceiptItem extends StatelessWidget {
             mainAxisSize: .min,
             children: [
               Text(name, style: GoogleFonts.dmSans(fontSize: 14)),
-              SizedBox(width: 3),
+              const SizedBox(width: 3),
               Text(
-                "x$qty",
+                'x$qty',
                 style: GoogleFonts.dmSans(color: AppColors.gray, fontSize: 10),
               ),
             ],
@@ -996,15 +817,13 @@ class _ReceiptItem extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _DashedLine extends StatelessWidget {
   const _DashedLine();
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: List.generate(
         40,
         (_) => Expanded(
@@ -1016,5 +835,4 @@ class _DashedLine extends StatelessWidget {
         ),
       ),
     );
-  }
 }

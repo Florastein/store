@@ -33,48 +33,43 @@ class StockItem {
     double? price,
     DateTime? expiryDate,
     String? description,
-  }) {
-    return StockItem(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      quantity: quantity ?? this.quantity,
-      image: image ?? this.image,
-      status: status ?? this.status,
-      barcode: barcode ?? this.barcode,
-      price: price ?? this.price,
-      expiryDate: expiryDate ?? this.expiryDate,
-      description: description ?? this.description,
-    );
-  }
+  }) => StockItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    quantity: quantity ?? this.quantity,
+    image: image ?? this.image,
+    status: status ?? this.status,
+    barcode: barcode ?? this.barcode,
+    price: price ?? this.price,
+    expiryDate: expiryDate ?? this.expiryDate,
+    description: description ?? this.description,
+  );
 
-  factory StockItem.fromJson(Map<String, dynamic> json) {
-    return StockItem(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      quantity: json['quantity'] as int,
-      image: json['image'] as String,
-      status: StockStatus.values.byName(json['status'] as String),
-      barcode: json['barcode'] as String?,
-      price: json['price'] as double?,
-      expiryDate:
-          json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : null,
-      description: json['description'] as String?,
-    );
-  }
+  factory StockItem.fromJson(Map<String, dynamic> json) => StockItem(
+    id: json['id'] as int,
+    name: json['name'] as String,
+    quantity: json['quantity'] as int,
+    image: json['image'] as String,
+    status: StockStatus.values.byName(json['status'] as String),
+    barcode: json['barcode'] as String?,
+    price: json['price'] as double?,
+    expiryDate: json['expiryDate'] != null
+        ? DateTime.parse(json['expiryDate'])
+        : null,
+    description: json['description'] as String?,
+  );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'quantity': quantity,
-      'image': image,
-      'status': status.name,
-      'barcode': barcode,
-      'price': price,
-      'expiryDate': expiryDate?.toIso8601String(),
-      'description': description,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'quantity': quantity,
+    'image': image,
+    'status': status.name,
+    'barcode': barcode,
+    'price': price,
+    'expiryDate': expiryDate?.toIso8601String(),
+    'description': description,
+  };
 }
 
 class UserAccount {
@@ -104,43 +99,37 @@ class UserAccount {
     String? phoneNumber,
     String? avatarUrl,
     DateTime? createdAt,
-  }) {
-    return UserAccount(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      role: role ?? this.role,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
+  }) => UserAccount(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    email: email ?? this.email,
+    role: role ?? this.role,
+    phoneNumber: phoneNumber ?? this.phoneNumber,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    createdAt: createdAt ?? this.createdAt,
+  );
 
-  factory UserAccount.fromJson(Map<String, dynamic> json) {
-    return UserAccount(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      role: UserRole.values.byName(json['role'] as String),
-      phoneNumber: json['phoneNumber'] as String?,
-      avatarUrl: json['avatarUrl'] as String?,
-      createdAt: json['createdAt'] == null
-          ? null
-          : DateTime.parse(json['createdAt'] as String),
-    );
-  }
+  factory UserAccount.fromJson(Map<String, dynamic> json) => UserAccount(
+    id: json['id'] as int,
+    name: json['name'] as String,
+    email: json['email'] as String,
+    role: UserRole.values.byName(json['role'] as String),
+    phoneNumber: json['phoneNumber'] as String?,
+    avatarUrl: json['avatarUrl'] as String?,
+    createdAt: json['createdAt'] == null
+        ? null
+        : DateTime.parse(json['createdAt'] as String),
+  );
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'role': role.name,
-      'phoneNumber': phoneNumber,
-      'avatarUrl': avatarUrl,
-      'createdAt': createdAt?.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'role': role.name,
+    'phoneNumber': phoneNumber,
+    'avatarUrl': avatarUrl,
+    'createdAt': createdAt?.toIso8601String(),
+  };
 }
 
 enum UserRole { customer, cashier, admin }

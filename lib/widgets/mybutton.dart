@@ -25,13 +25,12 @@ class MyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double buttonWidth =
-        width ?? MediaQuery.sizeOf(context).width * 0.9;
+    final double buttonWidth = width ?? MediaQuery.sizeOf(context).width * 0.9;
 
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         width: buttonWidth,
         height: height,
         decoration: BoxDecoration(

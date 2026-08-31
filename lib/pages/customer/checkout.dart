@@ -1,24 +1,23 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:provider/provider.dart';
-import 'package:store/models/products_model.dart';
-import 'package:store/repositories/cart_repository.dart';
-import 'package:store/repositories/product_repository.dart';
-import 'package:store/theme/app_colors.dart';
-import 'package:store/pages/customer/cart.dart';
-import 'package:store/widgets/product_image.dart';
+import '../../models/products_model.dart';
+import 'cart.dart';
+import '../../providers/repositories.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/product_image.dart';
 
 class _CheckoutConstants {
-  static const double bottomRadius = 45.0;
+  static const double bottomRadius = 45;
   static const double previewHeightFactor = 0.80;
-  static const double captureButtonSize = 84.0;
-  static const double iconSize = 32.0;
-  static const double appBarFontSize = 22.0;
-  static const double cartButtonSize = 45.0;
-  static const double cartIconSize = 28.0;
+  static const double captureButtonSize = 84;
+  static const double iconSize = 32;
+  static const double appBarFontSize = 22;
+  static const double cartButtonSize = 45;
+  static const double cartIconSize = 28;
 }
 
 class _CameraControllerManager {
@@ -71,8 +70,12 @@ class _CameraControllerManager {
   }
 
   Future<XFile?> takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return null;
-    if (_controller!.value.isTakingPicture) return null;
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return null;
+    }
+    if (_controller!.value.isTakingPicture) {
+      return null;
+    }
     try {
       return await _controller!.takePicture();
     } catch (e) {
@@ -82,7 +85,9 @@ class _CameraControllerManager {
   }
 
   void handleLifecycleState(AppLifecycleState state) {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return;
+    }
     if (state == AppLifecycleState.inactive) {
       _controller?.dispose();
       _controller = null;
@@ -119,14 +124,14 @@ class _MaxValueFormatter extends TextInputFormatter {
   }
 }
 
-class CheckoutScreen extends StatefulWidget {
+class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
 
   @override
-  State<CheckoutScreen> createState() => _CheckoutScreenState();
+  ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
-class _CheckoutScreenState extends State<CheckoutScreen>
+class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
     with WidgetsBindingObserver {
   late _CameraControllerManager _cameraManager;
 
@@ -136,7 +141,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     WidgetsBinding.instance.addObserver(this);
     _cameraManager = _CameraControllerManager(
       onStateChanged: () {
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       },
     );
     _cameraManager.initialize();
@@ -162,7 +169,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   }
 
   void _showProductPicker(BuildContext context) {
-    final products = context.read<ProductRepository>().products;
+    final products = ref.read(productRepositoryProvider).products;
     final sourceContext = context;
 
     showModalBottomSheet(
@@ -172,75 +179,70 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       isScrollControlled: true,
-      builder: (BuildContext ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.3,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Row(
+                children: [
+                  Text(
+                    'Select Product',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF2F2F2F),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Select Product',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF2F2F2F),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${products.length} items',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: const Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
+                  const Spacer(),
+                  Text(
+                    '${products.length} items',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: const Color(0xFF8E8E93),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.separated(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    itemCount: products.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return _ProductPickerItem(
-                        product: product,
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _showAddToCartSheet(sourceContext, product);
-                        },
-                      );
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.separated(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                itemCount: products.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _ProductPickerItem(
+                    product: product,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showAddToCartSheet(sourceContext, product);
                     },
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -257,230 +259,214 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         ),
       ),
       isScrollControlled: true,
-      builder: (BuildContext ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 10,
-            bottom:
-                MediaQuery.of(ctx).padding.bottom +
-                MediaQuery.of(ctx).viewInsets.bottom +
-                20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: ProductImage(
-                      product: product,
-                      width: 56,
-                      height: 56,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.labelPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${product.quantity} in stock',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: const Color(0xFF8E8E93),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Container(
-                    width: 70,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFC7C7CC),
-                        width: 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: TextField(
-                        controller: quantityController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.labelPrimary,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          _MaxValueFormatter(product.quantity),
-                        ],
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          hintText: '1',
-                          hintStyle: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF8E8E93),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: quantityController,
-                builder: (context, value, child) {
-                  final qty = int.tryParse(value.text.trim()) ?? 0;
-                  final isActive = qty > 0;
-
-                  return Semantics(
-                    button: true,
-                    label: 'Add item',
-                    child: InkWell(
-                      onTap: isActive
-                          ? () {
-                              final cappedQty = qty > product.quantity
-                                  ? product.quantity
-                                  : qty;
-                              context.read<CartRepository>().addItem(
-                                product,
-                                cappedQty,
-                              );
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: AppColors.success,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  content: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.check_circle,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        'Added $cappedQty x ${product.name} to cart',
-                                        style: GoogleFonts.poppins(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                          : null,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? AppColors.labelPrimary
-                              : const Color(0xFFE5E5EA),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Add to Cart',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: isActive
-                                  ? Colors.white
-                                  : const Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    ).whenComplete(() => quantityController.dispose());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.backgroundColor,
-        body: Stack(
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 10,
+          bottom:
+              MediaQuery.of(ctx).padding.bottom +
+              MediaQuery.of(ctx).viewInsets.bottom +
+              20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CameraPreviewWidget(manager: _cameraManager),
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: _CustomAppBar(),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height:
-                  MediaQuery.of(context).size.height *
-                  (1.0 - _CheckoutConstants.previewHeightFactor),
-              child: Center(
-                child: _CaptureButton(
-                  isEnabled: _cameraManager.isInitialized,
-                  onPressed: _onCapturePressed,
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: ProductImage(product: product, width: 56, height: 56),
                 ),
-              ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.labelPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${product.quantity} in stock',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color(0xFF8E8E93),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  width: 70,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFC7C7CC)),
+                  ),
+                  child: Center(
+                    child: TextField(
+                      controller: quantityController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.labelPrimary,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _MaxValueFormatter(product.quantity),
+                      ],
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        hintText: '1',
+                        hintStyle: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: quantityController,
+              builder: (context, value, child) {
+                final qty = int.tryParse(value.text.trim()) ?? 0;
+                final isActive = qty > 0;
+
+                return Semantics(
+                  button: true,
+                  label: 'Add item',
+                  child: InkWell(
+                    onTap: isActive
+                        ? () {
+                            final cappedQty = qty > product.quantity
+                                ? product.quantity
+                                : qty;
+                            ref
+                                .read(cartRepositoryProvider)
+                                .addItem(product, cappedQty);
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.success,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                content: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Added $cappedQty x ${product.name} to cart',
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.labelPrimary
+                            : const Color(0xFFE5E5EA),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Add to Cart',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: isActive
+                                ? Colors.white
+                                : const Color(0xFF8E8E93),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),
       ),
-    );
+    ).whenComplete(() => quantityController.dispose());
   }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: Stack(
+        children: [
+          _CameraPreviewWidget(manager: _cameraManager),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: _CustomAppBar(),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height:
+                MediaQuery.of(context).size.height *
+                (1.0 - _CheckoutConstants.previewHeightFactor),
+            child: Center(
+              child: _CaptureButton(
+                isEnabled: _cameraManager.isInitialized,
+                onPressed: _onCapturePressed,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ProductPickerItem extends StatelessWidget {
@@ -490,64 +476,62 @@ class _ProductPickerItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: ProductImage(
-                product: product,
-                width: 48,
-                height: 48,
-                iconSize: 20,
-              ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: ProductImage(
+              product: product,
+              width: 48,
+              height: 48,
+              iconSize: 20,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF2F2F2F),
+                  ),
+                ),
+                if (product.price != null)
                   Text(
-                    product.name,
+                    '₵${product.price!.toStringAsFixed(2)}',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF2F2F2F),
+                      fontSize: 12,
+                      color: AppColors.navigationActive,
                     ),
                   ),
-                  if (product.price != null)
-                    Text(
-                      '₵${product.price!.toStringAsFixed(2)}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: AppColors.navigationActive,
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-            Text(
-              '${product.quantity} in stock',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: const Color(0xFF8E8E93),
-              ),
+          ),
+          Text(
+            '${product.quantity} in stock',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: const Color(0xFF8E8E93),
             ),
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right, color: Colors.grey[400]),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.chevron_right, color: Colors.grey[400]),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _CameraPreviewWidget extends StatelessWidget {
@@ -603,115 +587,104 @@ class _CaptureButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Take photo',
-      enabled: isEnabled,
-      child: InkWell(
-        onTap: isEnabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(
-          _CheckoutConstants.captureButtonSize,
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Take photo',
+    enabled: isEnabled,
+    child: InkWell(
+      onTap: isEnabled ? onPressed : null,
+      borderRadius: BorderRadius.circular(_CheckoutConstants.captureButtonSize),
+      child: Container(
+        height: _CheckoutConstants.captureButtonSize,
+        width: _CheckoutConstants.captureButtonSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 4),
         ),
-        child: Container(
-          height: _CheckoutConstants.captureButtonSize,
-          width: _CheckoutConstants.captureButtonSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isEnabled
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.4),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.camera_alt,
-                  color: isEnabled ? Colors.black : Colors.grey[700],
-                  size: _CheckoutConstants.iconSize,
-                ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isEnabled
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.4),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.camera_alt,
+                color: isEnabled ? Colors.black : Colors.grey[700],
+                size: _CheckoutConstants.iconSize,
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _CustomAppBar extends StatelessWidget {
   const _CustomAppBar();
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Checkout',
-          style: GoogleFonts.poppins(
-            fontSize: _CheckoutConstants.appBarFontSize,
-            fontWeight: FontWeight.w600,
-            color: AppColors.labelPrimary,
-          ),
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        'Checkout',
+        style: GoogleFonts.poppins(
+          fontSize: _CheckoutConstants.appBarFontSize,
+          fontWeight: FontWeight.w600,
+          color: AppColors.labelPrimary,
         ),
-        const _CartButton(),
-      ],
-    );
-  }
+      ),
+      const _CartButton(),
+    ],
+  );
 }
 
-class _CartButton extends StatelessWidget {
+class _CartButton extends ConsumerWidget {
   const _CartButton();
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Semantics(
-        button: true,
-        label: 'Open cart',
-        child: InkWell(
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (context) => const CartPage()));
-          },
-          customBorder: const CircleBorder(),
-          child: Container(
-            height: _CheckoutConstants.cartButtonSize,
-            width: _CheckoutConstants.cartButtonSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.white,
-              border: Border.all(
-                color: Colors.black.withValues(alpha: 0.08),
-                width: 1,
+  Widget build(BuildContext context, WidgetRef ref) => Padding(
+    padding: const EdgeInsets.only(left: 8),
+    child: Semantics(
+      button: true,
+      label: 'Open cart',
+      child: InkWell(
+        onTap: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (context) => const CartPage()));
+        },
+        customBorder: const CircleBorder(),
+        child: Container(
+          height: _CheckoutConstants.cartButtonSize,
+          width: _CheckoutConstants.cartButtonSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.white,
+            border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 12,
+                spreadRadius: -2,
+                offset: const Offset(0, 6),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 12,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Center(
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedShoppingCartCheckOut02,
-                size: _CheckoutConstants.cartIconSize,
-                color: Colors.black.withValues(alpha: 0.80),
-              ),
+            ],
+          ),
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedShoppingCartCheckOut02,
+              size: _CheckoutConstants.cartIconSize,
+              color: Colors.black.withValues(alpha: 0.80),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

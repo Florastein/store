@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:store/pages/splash/splash_two.dart';
-import 'package:store/theme/app_colors.dart';
+import 'splash_two.dart';
+import '../../theme/app_colors.dart';
 
 class SplashOne extends StatefulWidget {
   const SplashOne({super.key});
@@ -25,7 +25,7 @@ class _SplashOneState extends State<SplashOne>
     );
     _opacityAnimation = Tween<double>(
       begin: 0.1,
-      end: 1.0,
+      end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -53,21 +53,19 @@ class _SplashOneState extends State<SplashOne>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: Center(
-        child: FadeTransition(
-          opacity: _opacityAnimation,
-          child: Text(
-            "S",
-            style: GoogleFonts.poppins(
-              fontSize: 148,
-              fontWeight: FontWeight.bold,
-            ),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.backgroundColor,
+    body: Center(
+      child: FadeTransition(
+        opacity: _opacityAnimation,
+        child: Text(
+          'S',
+          style: GoogleFonts.poppins(
+            fontSize: 148,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

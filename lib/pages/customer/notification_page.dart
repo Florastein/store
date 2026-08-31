@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:store/theme/app_colors.dart';
+import '../../theme/app_colors.dart';
 
 class CustomerNotificationPage extends StatefulWidget {
   const CustomerNotificationPage({super.key});
@@ -15,152 +15,153 @@ class _CustomerNotificationPageState extends State<CustomerNotificationPage> {
   bool _messagesDeleted = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  InkWell(
-                    borderRadius: BorderRadius.circular(999),
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      height: 34,
-                      width: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF2F2F2F)),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 16,
-                        color: Color(0xFF2F2F2F),
-                      ),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.backgroundColor,
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    height: 34,
+                    width: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF2F2F2F)),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 16,
+                      color: Color(0xFF2F2F2F),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Notification',
-                    style: GoogleFonts.poppins(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF2F2F2F),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Notification',
+                  style: GoogleFonts.poppins(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF2F2F2F),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            if (!_messagesDeleted)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (!_allRead)
+                    Text(
+                      'ALL MESSAGES',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF5E5E5E),
+                      ),
+                    ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        if (_allRead && !_messagesDeleted) {
+                          // Delete all messages
+                          _messagesDeleted = true;
+                        } else if (!_allRead && !_messagesDeleted) {
+                          // Mark all as read
+                          _allRead = true;
+                        }
+                      });
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: _allRead
+                          ? Colors.red
+                          : AppColors.navigationActive,
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      _allRead ? 'Delete all' : 'Read all',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: _allRead
+                            ? Colors.red
+                            : AppColors.navigationActive,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-              if (!_messagesDeleted)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (!_allRead)
+
+            const SizedBox(height: 18),
+            const _DashedDivider(),
+            const SizedBox(height: 18),
+            if (_messagesDeleted)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.inbox_outlined,
+                        size: 64,
+                        color: Color(0xFFD0D0D0),
+                      ),
+                      const SizedBox(height: 16),
                       Text(
-                        'ALL MESSAGES',
+                        'No Notifications',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF5E5E5E),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFB9B9B9),
                         ),
                       ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          if (_allRead && !_messagesDeleted) {
-                            // Delete all messages
-                            _messagesDeleted = true;
-                          } else if (!_allRead && !_messagesDeleted) {
-                            // Mark all as read
-                            _allRead = true;
-                          }
-                        });
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            _allRead ? Colors.red : AppColors.navigationActive,
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        _allRead ? 'Delete all' : 'Read all',
+                      const SizedBox(height: 8),
+                      Text(
+                        'You\'re all caught up! 🎉',
                         style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: _allRead ? Colors.red : AppColors.navigationActive,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              
-              const SizedBox(height: 18),
-              const _DashedDivider(),
-              const SizedBox(height: 18),
-              if (_messagesDeleted)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 64,
+                          fontSize: 14,
                           color: const Color(0xFFD0D0D0),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No Notifications',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFB9B9B9),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'You\'re all caught up! 🎉',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: const Color(0xFFD0D0D0),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                )
-              else ...[
-                if (!_messagesDeleted)
-                  _NotificationItem(
-                    title: 'Hurrah 🎉',
-                    message:
-                        'Your items are already out of stock with the past few days. Congratulations on your product selling faster.',
-                    isRead: _allRead,
-                  ),
-                if (!_messagesDeleted) const SizedBox(height: 18),
-                if (!_messagesDeleted) const _DashedDivider(),
-                if (!_messagesDeleted) const SizedBox(height: 18),
-                if (!_messagesDeleted)
-                  _NotificationItem(
-                    title: 'Low on stock ❗',
-                    message:
-                        'Some of your fast selling products are low on stock please check and restock',
-                    isRead: _allRead,
-                  ),
-                if (!_messagesDeleted) const SizedBox(height: 18),
-                if (!_messagesDeleted) const _DashedDivider(),
-              ]
+                ),
+              )
+            else ...[
+              if (!_messagesDeleted)
+                _NotificationItem(
+                  title: 'Hurrah 🎉',
+                  message:
+                      'Your items are already out of stock with the past few days. Congratulations on your product selling faster.',
+                  isRead: _allRead,
+                ),
+              if (!_messagesDeleted) const SizedBox(height: 18),
+              if (!_messagesDeleted) const _DashedDivider(),
+              if (!_messagesDeleted) const SizedBox(height: 18),
+              if (!_messagesDeleted)
+                _NotificationItem(
+                  title: 'Low on stock ❗',
+                  message:
+                      'Some of your fast selling products are low on stock please check and restock',
+                  isRead: _allRead,
+                ),
+              if (!_messagesDeleted) const SizedBox(height: 18),
+              if (!_messagesDeleted) const _DashedDivider(),
             ],
-          ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _NotificationItem extends StatelessWidget {
@@ -175,43 +176,39 @@ class _NotificationItem extends StatelessWidget {
   final bool isRead;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: isRead ? const Color(0xFFB9B9B9) : const Color(0xFF2F2F2F),
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: isRead ? const Color(0xFFB9B9B9) : const Color(0xFF2F2F2F),
         ),
-        const SizedBox(height: 10),
-        Text(
-          message,
-          style: GoogleFonts.poppins(
-            fontSize: 13.5,
-            height: 1.45,
-            color: isRead ? const Color(0xFFD0D0D0) : const Color(0xFF5E5E5E),
-          ),
+      ),
+      const SizedBox(height: 10),
+      Text(
+        message,
+        style: GoogleFonts.poppins(
+          fontSize: 13.5,
+          height: 1.45,
+          color: isRead ? const Color(0xFFD0D0D0) : const Color(0xFF5E5E5E),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 class _DashedDivider extends StatelessWidget {
   const _DashedDivider();
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 1,
-      width: double.infinity,
-      child: CustomPaint(painter: _DashedDividerPainter()),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+    height: 1,
+    width: double.infinity,
+    child: CustomPaint(painter: _DashedDividerPainter()),
+  );
 }
 
 class _DashedDividerPainter extends CustomPainter {

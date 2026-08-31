@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:store/pages/auth/create_password.dart';
-import 'package:store/theme/app_colors.dart';
-import 'package:store/widgets/mybutton.dart';
-import 'package:store/pages/auth/login/login.dart';
+import 'create_password.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/mybutton.dart';
+import 'login/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAccount extends StatefulWidget {
@@ -55,7 +55,9 @@ class _CreateAccountState extends State<CreateAccount> {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('customer_name', _nameController.text.trim());
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => const CreatePassword()));
@@ -63,322 +65,309 @@ class _CreateAccountState extends State<CreateAccount> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.backgroundColor,
+    body: SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Title
+                    Text(
+                      'Create an Account',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.labelPrimary,
+                        height: 1.2,
+                        letterSpacing: 0.38,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Subtitle
+                    Text(
+                      'Set up your store in under a minute',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.primary,
+                        letterSpacing: 0.18,
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    // Full Name Label
+                    Text(
+                      'Full name',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.labelPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Full Name Input
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F4F0),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: _nameController,
+                        focusNode: _nameFocusNode,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.labelPrimary,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Dinesh',
+                          controller: _nameController,
+                          focusNode: _nameFocusNode,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your full name';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Email Label
+                    Text(
+                      'Email',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        color: AppColors.labelPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Email Input
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F4F0),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: _emailController,
+                        focusNode: _emailFocusNode,
+                        keyboardType: TextInputType.emailAddress,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.labelPrimary,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hintText: 'example@mail.com',
+                          controller: _emailController,
+                          focusNode: _emailFocusNode,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your email address';
+                          }
+                          final emailRegExp = RegExp(
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                          );
+                          if (!emailRegExp.hasMatch(value.trim())) {
+                            return 'Please enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Have an account? Login row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 16),
-                        // Title
                         Text(
-                          'Create an Account',
+                          'Have an account? ',
                           style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                             color: AppColors.labelPrimary,
-                            height: 1.2,
                             letterSpacing: 0.38,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // Subtitle
-                        Text(
-                          'Set up your store in under a minute',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.primary,
-                            letterSpacing: 0.18,
-                          ),
-                        ),
-                        const SizedBox(height: 36),
-                        // Full Name Label
-                        Text(
-                          'Full name',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.labelPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Full Name Input
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4F0),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, -3),
-                              ),
-                            ],
-                          ),
-                          child: TextFormField(
-                            controller: _nameController,
-                            focusNode: _nameFocusNode,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.normal,
-                              color: AppColors.labelPrimary,
-                            ),
-                            decoration: _buildInputDecoration(
-                              hintText: 'Dinesh',
-                              controller: _nameController,
-                              focusNode: _nameFocusNode,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your full name';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Email Label
-                        Text(
-                          'Email',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            color: AppColors.labelPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Email Input
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4F0),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, -3),
-                              ),
-                            ],
-                          ),
-                          child: TextFormField(
-                            controller: _emailController,
-                            focusNode: _emailFocusNode,
-                            keyboardType: TextInputType.emailAddress,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.normal,
-                              color: AppColors.labelPrimary,
-                            ),
-                            decoration: _buildInputDecoration(
-                              hintText: 'example@mail.com',
-                              controller: _emailController,
-                              focusNode: _emailFocusNode,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your email address';
-                              }
-                              final emailRegExp = RegExp(
-                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-                              );
-                              if (!emailRegExp.hasMatch(value.trim())) {
-                                return 'Please enter a valid email address';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Have an account? Login row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Have an account? ',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: AppColors.labelPrimary,
-                                letterSpacing: 0.38,
-                              ),
-                            ),
 
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).pushReplacement(
-                                  CupertinoPageRoute(
-                                    builder: (context) => const Login(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Login',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.blue, // Curved premium blue
-                                  letterSpacing: 0.38,
-                                ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pushReplacement(
+                              CupertinoPageRoute(
+                                builder: (context) => const Login(),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        // Divider Line
-                        const Divider(
-                          color: Color(0xFFE5E5EA),
-                          thickness: 1,
-                          height: 1,
-                        ),
-                        const SizedBox(height: 16),
-                        // "or" Centered
-                        Center(
+                            );
+                          },
                           child: Text(
-                            'or',
+                            'Login',
                             style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.labelPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.blue, // Curved premium blue
                               letterSpacing: 0.38,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // Google Sign In
-                        _buildSocialButton(
-                          icon: const GoogleLogo(size: 20),
-                          text: 'Sign up with Google',
-                          onTap: () {
-                            // Handle Google Sign In
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        // Apple Sign In
-                        _buildSocialButton(
-                          icon: const Icon(
-                            Icons.apple,
-                            size: 24,
-                            color: Colors.black,
-                          ),
-                          text: 'Sign up with Apple',
-                          onTap: () {
-                            // Handle Apple Sign In
-                          },
-                        ),
-                        const Spacer(),
-                        const SizedBox(height: 32),
-                        // Next Button
-                        Center(
-                          child: MyButton(
-                            text: 'Next',
-                            onPressed: _onNextPressed,
-                            color: AppColors.buttonPrimary,
-                            width: MediaQuery.sizeOf(context).width * 0.9,
-                            height: 62,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    // Divider Line
+                    const Divider(
+                      color: Color(0xFFE5E5EA),
+                      thickness: 1,
+                      height: 1,
+                    ),
+                    const SizedBox(height: 16),
+                    // "or" Centered
+                    Center(
+                      child: Text(
+                        'or',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.labelPrimary,
+                          letterSpacing: 0.38,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Google Sign In
+                    _buildSocialButton(
+                      icon: const GoogleLogo(size: 20),
+                      text: 'Sign up with Google',
+                      onTap: () {
+                        // Handle Google Sign In
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Apple Sign In
+                    _buildSocialButton(
+                      icon: const Icon(
+                        Icons.apple,
+                        size: 24,
+                        color: Colors.black,
+                      ),
+                      text: 'Sign up with Apple',
+                      onTap: () {
+                        // Handle Apple Sign In
+                      },
+                    ),
+                    const Spacer(),
+                    const SizedBox(height: 32),
+                    // Next Button
+                    Center(
+                      child: MyButton(
+                        text: 'Next',
+                        onPressed: _onNextPressed,
+                        color: AppColors.buttonPrimary,
+                        width: MediaQuery.sizeOf(context).width * 0.9,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 
   InputDecoration _buildInputDecoration({
     required String hintText,
     required TextEditingController controller,
     required FocusNode focusNode,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: GoogleFonts.poppins(
-        color: AppColors.textTetiary,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      errorStyle: const TextStyle(fontSize: 0, height: 0),
-      isDense: true,
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      suffixIcon: (focusNode.hasFocus && controller.text.isNotEmpty)
-          ? GestureDetector(
-              onTap: () {
-                controller.clear();
-              },
-              child: const Icon(
-                Icons.cancel,
-                color: Color(0xFFBCBCBC),
-                size: 20,
-              ),
-            )
-          : null,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.gray, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-      ),
-    );
-  }
+  }) => InputDecoration(
+    hintText: hintText,
+    hintStyle: GoogleFonts.poppins(
+      color: AppColors.textTetiary,
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+    ),
+    errorStyle: const TextStyle(fontSize: 0, height: 0),
+    isDense: true,
+    filled: true,
+    fillColor: Colors.transparent,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    suffixIcon: (focusNode.hasFocus && controller.text.isNotEmpty)
+        ? GestureDetector(
+            onTap: () {
+              controller.clear();
+            },
+            child: const Icon(Icons.cancel, color: Color(0xFFBCBCBC), size: 20),
+          )
+        : null,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.gray),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+    ),
+  );
 
   Widget _buildSocialButton({
     required Widget icon,
     required String text,
     required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppColors.backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFC7C7CC), width: 1),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon,
-            const SizedBox(width: 10),
-            Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: const Color(0xFF9EA2AD),
-                letterSpacing: 0.38,
-              ),
-            ),
-          ],
-        ),
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFC7C7CC)),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          icon,
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: const Color(0xFF9EA2AD),
+              letterSpacing: 0.38,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class GoogleLogo extends StatelessWidget {
@@ -386,9 +375,8 @@ class GoogleLogo extends StatelessWidget {
   const GoogleLogo({super.key, this.size = 24.0});
 
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(size: Size(size, size), painter: _GoogleLogoPainter());
-  }
+  Widget build(BuildContext context) =>
+      CustomPaint(size: Size(size, size), painter: _GoogleLogoPainter());
 }
 
 class _GoogleLogoPainter extends CustomPainter {

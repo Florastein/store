@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:store/pages/onboarding/onboard_one.dart';
-import 'package:store/theme/app_colors.dart';
+import '../onboarding/onboard_one.dart';
+import '../../theme/app_colors.dart';
 
 class SplashTwo extends StatefulWidget {
   const SplashTwo({super.key});
@@ -56,10 +56,9 @@ class _SplashTwoState extends State<SplashTwo>
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              "store",
+              'store',
               style: GoogleFonts.poppins(
                 fontSize: 164,
                 fontWeight: FontWeight.bold,
@@ -90,7 +89,7 @@ class _SplashTwoState extends State<SplashTwo>
                           child: LinearProgressIndicator(
                             value: progress,
                             color: Colors.black,
-                            backgroundColor: Color(0xFFE4E4E4),
+                            backgroundColor: const Color(0xFFE4E4E4),
                             minHeight: 12,
                             borderRadius: BorderRadius.circular(999),
                           ),

@@ -1,32 +1,13 @@
 {
   "project_info": {
-    "project_number": "1097146154447",
-    "project_id": "store-test-bb4a4",
-    "storage_bucket": "store-test-bb4a4.firebasestorage.app"
+    "project_number": "570812313100",
+    "project_id": "yeah-c6ebc",
+    "storage_bucket": "yeah-c6ebc.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1097146154447:android:612ff2a3cd38f9a20866ba",
-        "android_client_info": {
-          "package_name": "com.cadmil.appname"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAoVUlSVDOZOTPkC49_47vW7gnUV3yJat4"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1097146154447:android:de6f9f1ad394126f0866ba",
+        "mobilesdk_app_id": "1:570812313100:android:e681e2e1c5d6986c3f8829",
         "android_client_info": {
           "package_name": "com.cadmil.store"
         }
@@ -34,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAoVUlSVDOZOTPkC49_47vW7gnUV3yJat4"
+          "current_key": "AIzaSyBJcg0su6wmipFFI78-FGGDsN2j2RnLTv4"
         }
       ],
       "services": {

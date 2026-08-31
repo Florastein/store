@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:store/models/products_model.dart';
-import 'package:store/repositories/product_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../models/products_model.dart';
 
-/// A product image that immediately reflects image changes in ProductRepository.
+/// A product image that uses disk caching via cached_network_image.
 class ProductImage extends StatelessWidget {
   const ProductImage({
     super.key,
@@ -21,43 +20,23 @@ class ProductImage extends StatelessWidget {
   final double iconSize;
 
   @override
-  Widget build(BuildContext context) {
-    final repository = context.watch<ProductRepository>();
-    final currentProduct = repository.findById(product.id) ?? product;
-    final bytes = repository.imageBytesFor(
-      currentProduct.id,
-      currentProduct.image,
-    );
-
-    if (bytes != null) {
-      return Image.memory(
-        bytes,
-        key: ValueKey('memory-${currentProduct.id}-${currentProduct.image}'),
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (context, error, stackTrace) => _placeholder(),
-      );
-    }
-
-    return Image.network(
-      currentProduct.image,
-      key: ValueKey(currentProduct.image),
+  Widget build(BuildContext context) => CachedNetworkImage(
+    imageUrl: product.image,
+    key: ValueKey(product.image),
+    width: width,
+    height: height,
+    fit: fit,
+    placeholder: (context, url) => SizedBox(
       width: width,
       height: height,
-      fit: fit,
-      loadingBuilder: (_, child, progress) => progress == null
-          ? child
-          : SizedBox(
-              width: width,
-              height: height,
-              child: const Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-      errorBuilder: (context, error, stackTrace) => _placeholder(),
-    );
-  }
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    ),
+    errorWidget: (context, url, error) => _placeholder(),
+    memCacheWidth: width?.toInt(),
+    memCacheHeight: height?.toInt(),
+    maxWidthDiskCache: 400,
+    maxHeightDiskCache: 400,
+  );
 
   Widget _placeholder() => Container(
     width: width,
