@@ -57,11 +57,20 @@ class _SplashTwoState extends State<SplashTwo>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(
-              'store',
-              style: GoogleFonts.poppins(
-                fontSize: 164,
-                fontWeight: FontWeight.bold,
+            SizedBox(
+              width: screenWidth,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
+                child: Text(
+                  'store',
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
+                  style: GoogleFonts.poppins(
+                    fontSize: 164,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             //const SizedBox(height: 16),

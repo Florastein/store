@@ -5,12 +5,14 @@ import '../../widgets/mybutton.dart';
 import 'account_type.dart';
 
 class OnboardSlideData {
+  final String imagePath;
   final String titleLine1;
   final String titleLine2Gray;
   final String titleLine2Primary;
   final String description;
 
   const OnboardSlideData({
+    this.imagePath = 'assets/images/s.png',
     required this.titleLine1,
     required this.titleLine2Gray,
     required this.titleLine2Primary,
@@ -32,6 +34,7 @@ class _OnboardOneState extends State<OnboardOne> {
 
   static const List<OnboardSlideData> _slides = [
     OnboardSlideData(
+      imagePath: 'assets/images/c7fe939eaacc6db93d626edf6f8116b6754af2ed.png',
       titleLine1: 'Your Store,',
       titleLine2Gray: 'under',
       titleLine2Primary: ' your control.',
@@ -101,6 +104,11 @@ class _OnboardOneState extends State<OnboardOne> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Image.asset(
+                        slide.imagePath,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                      ),
                       // Title Line 1
                       Text(
                         slide.titleLine1,

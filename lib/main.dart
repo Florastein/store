@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:store/pages/splash/splash_one.dart';
 
 import 'pages/customer/dashboard.dart';
 
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const MaterialApp(
     title: 'Store',
-    home: CustomerDashboard(),
+    home: SplashOne(),
     debugShowCheckedModeBanner: false,
   );
 }
