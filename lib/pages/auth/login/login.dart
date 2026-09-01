@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,8 @@ import 'package:store/pages/customer/dashboard.dart';
 import 'package:store/pages/auth/login/verify_phone.dart';
 import 'package:store/pages/auth/forgot_password.dart';
 import '../../../providers/repositories.dart';
+import 'package:store/pages/auth/verify_email_otp.dart';
+import 'package:store/repositories/interfaces/otp_repository.dart';
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
@@ -74,9 +76,12 @@ class _LoginState extends ConsumerState<Login> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message, style: GoogleFonts.poppins()), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.poppins()),
+        backgroundColor: color,
+      ),
+    );
   }
 
   void _showError(Object error) {
@@ -114,21 +119,44 @@ class _LoginState extends ConsumerState<Login> {
 
     if (_isEmailTab) {
       try {
+        final email = _emailController.text.trim();
+        final password = _passwordController.text;
         await ref
             .read(authRepositoryProvider)
-            .signInWithEmail(
-              email: _emailController.text,
-              password: _passwordController.text,
-            );
+            .signInWithEmail(email: email, password: password);
+        await ref.read(authRepositoryProvider).signOut();
+        await ref
+            .read(otpRepositoryProvider)
+            .sendOtp(email: email, purpose: OtpPurpose.login);
         if (!mounted) {
           return;
         }
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const CustomerDashboard()),
-          (route) => false,
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (otpContext) => VerifyEmailOtp(
+              email: email,
+              purpose: OtpPurpose.login,
+              onVerified: () async {
+                await ref
+                    .read(authRepositoryProvider)
+                    .signInWithEmail(email: email, password: password);
+                if (!otpContext.mounted) {
+                  return;
+                }
+                Navigator.of(otpContext).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const CustomerDashboard()),
+                  (route) => false,
+                );
+              },
+            ),
+          ),
         );
       } catch (e) {
-        _showError(e);
+        if (e is OtpException) {
+          _snack(e.message, AppColors.error);
+        } else {
+          _showError(e);
+        }
       } finally {
         if (mounted) {
           setState(() {
@@ -137,14 +165,54 @@ class _LoginState extends ConsumerState<Login> {
         }
       }
     } else {
-      // Phone login flow handled via OTP verification.
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const VerifyPhone()));
+      await _startPhoneSignIn();
     }
+  }
+
+  Future<void> _startPhoneSignIn() async {
+    await ref
+        .read(authRepositoryProvider)
+        .verifyPhoneNumber(
+          phoneNumber: _phoneController.text.trim(),
+          verificationCompleted: (credential) async {
+            await ref
+                .read(authRepositoryProvider)
+                .signInWithPhoneCredential(credential);
+            if (!mounted) {
+              return;
+            }
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const CustomerDashboard()),
+              (route) => false,
+            );
+          },
+          verificationFailed: (error) {
+            _showError(error);
+            if (mounted) {
+              setState(() => _isSubmitting = false);
+            }
+          },
+          codeSent: (verificationId, resendToken) {
+            if (!mounted) {
+              return;
+            }
+            setState(() => _isSubmitting = false);
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => VerifyPhone(
+                  phoneNumber: _phoneController.text.trim(),
+                  verificationId: verificationId,
+                  resendToken: resendToken,
+                ),
+              ),
+            );
+          },
+          codeAutoRetrievalTimeout: (_) {
+            if (mounted) {
+              setState(() => _isSubmitting = false);
+            }
+          },
+        );
   }
 
   InputDecoration _buildInputDecoration({
@@ -371,7 +439,7 @@ class _LoginState extends ConsumerState<Login> {
                             color: AppColors.labelPrimary,
                           ),
                           decoration: _buildInputDecoration(
-                            hintText: 'example@mail.com',
+                            hintText: 'admin@scrabble.io',
                             controller: _emailController,
                             focusNode: _emailFocusNode,
                           ),
@@ -486,6 +554,9 @@ class _LoginState extends ConsumerState<Login> {
                           ),
                         ),
                         validator: (value) {
+                          if (!_isEmailTab) {
+                            return null;
+                          }
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
                           }

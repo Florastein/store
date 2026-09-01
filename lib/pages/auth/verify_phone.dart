@@ -23,9 +23,9 @@ class _VerifyPhoneState extends State<VerifyPhone> {
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(4, (_) => TextEditingController());
+    _controllers = List.generate(6, (_) => TextEditingController());
 
-    _focusNodes = List.generate(4, (_) => FocusNode());
+    _focusNodes = List.generate(6, (_) => FocusNode());
 
     _startTimer();
     for (final node in _focusNodes) {
@@ -111,11 +111,11 @@ class _VerifyPhoneState extends State<VerifyPhone> {
 
   void _onNextPressed() {
     final code = _controllers.map((c) => c.text).join();
-    if (code.length < 4) {
+    if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Please enter the full 4-digit code',
+            'Please enter the full 6-digit code',
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: AppColors.error,
@@ -137,7 +137,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
   }
 
   Widget _buildPinField(int index) => SizedBox(
-    width: 60,
+    width: 48,
     height: 62,
     child: Focus(
       onKeyEvent: (node, event) {
@@ -275,7 +275,7 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                   // Subtitle
                   Text(
                     strutStyle: const StrutStyle(height: 1.33),
-                    'Enter the 4 digit verification code sent to your mail or phone number .',
+                    'Enter the 6-digit verification code sent to your phone number.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 15,
@@ -291,12 +291,16 @@ class _VerifyPhoneState extends State<VerifyPhone> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildPinField(0),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       _buildPinField(1),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       _buildPinField(2),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       _buildPinField(3),
+                      const SizedBox(width: 8),
+                      _buildPinField(4),
+                      const SizedBox(width: 8),
+                      _buildPinField(5),
                     ],
                   ),
                   const SizedBox(height: 24),

@@ -31,11 +31,43 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
-  }) =>
-      _firebaseAuth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
+  }) => _firebaseAuth.signInWithEmailAndPassword(
+    email: email.trim(),
+    password: password,
+  );
+
+  @override
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required PhoneVerificationCompleted verificationCompleted,
+    required PhoneVerificationFailed verificationFailed,
+    required PhoneCodeSent codeSent,
+    required PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout,
+    int? forceResendingToken,
+  }) => _firebaseAuth.verifyPhoneNumber(
+    phoneNumber: phoneNumber.trim(),
+    verificationCompleted: verificationCompleted,
+    verificationFailed: verificationFailed,
+    codeSent: codeSent,
+    codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+    forceResendingToken: forceResendingToken,
+  );
+
+  @override
+  Future<UserCredential> signInWithPhoneCode({
+    required String verificationId,
+    required String smsCode,
+  }) => _firebaseAuth.signInWithCredential(
+    PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode.trim(),
+    ),
+  );
+
+  @override
+  Future<UserCredential> signInWithPhoneCredential(
+    PhoneAuthCredential credential,
+  ) => _firebaseAuth.signInWithCredential(credential);
 
   @override
   Future<void> sendPasswordReset(String email) =>

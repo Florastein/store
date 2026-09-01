@@ -6,6 +6,9 @@ import 'create_password.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/mybutton.dart';
 import 'login/login.dart';
+import 'package:store/providers/repositories.dart';
+import 'package:store/repositories/interfaces/otp_repository.dart';
+import 'package:store/pages/auth/verify_email_otp.dart';
 
 class CreateAccount extends ConsumerStatefulWidget {
   const CreateAccount({super.key});
@@ -20,6 +23,7 @@ class _CreateAccountState extends ConsumerState<CreateAccount> {
   final _emailController = TextEditingController();
   final _nameFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -52,18 +56,57 @@ class _CreateAccountState extends ConsumerState<CreateAccount> {
   }
 
   void _onNextPressed() async {
-    if (_formKey.currentState!.validate()) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      Navigator.of(
-        context,
-      ).push(
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _isSubmitting = true);
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    try {
+      await ref
+          .read(otpRepositoryProvider)
+          .sendOtp(
+            email: email,
+            name: name,
+            purpose: OtpPurpose.emailConfirmation,
+          );
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => CreatePassword(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
+          builder: (otpContext) => VerifyEmailOtp(
+            email: email,
+            name: name,
+            purpose: OtpPurpose.emailConfirmation,
+            onVerified: () async {
+              if (!otpContext.mounted) {
+                return;
+              }
+              await Navigator.of(otpContext).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => CreatePassword(name: name, email: email),
+                ),
+              );
+            },
           ),
         ),
       );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error is OtpException
+          ? error.message
+          : 'Unable to send the verification code.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 

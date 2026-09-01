@@ -1,360 +1,172 @@
-import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../theme/app_colors.dart';
-import '../../../widgets/mybutton.dart';
-import '../registration_complete.dart';
+import 'package:store/pages/customer/dashboard.dart';
+import 'package:store/providers/repositories.dart';
+import 'package:store/theme/app_colors.dart';
+import 'package:store/widgets/mybutton.dart';
 
-class VerifyPhone extends StatefulWidget {
-  const VerifyPhone({super.key});
+class VerifyPhone extends ConsumerStatefulWidget {
+  const VerifyPhone({
+    required this.phoneNumber,
+    required this.verificationId,
+    this.resendToken,
+    super.key,
+  });
+
+  final String phoneNumber;
+  final String verificationId;
+  final int? resendToken;
 
   @override
-  State<VerifyPhone> createState() => _VerifyPhoneState();
+  ConsumerState<VerifyPhone> createState() => _VerifyPhoneState();
 }
 
-class _VerifyPhoneState extends State<VerifyPhone> {
-  late final List<TextEditingController> _controllers;
-  late final List<FocusNode> _focusNodes;
-  int _secondsRemaining = 10;
-  Timer? _timer;
+class _VerifyPhoneState extends ConsumerState<VerifyPhone> {
+  final _codeController = TextEditingController();
+  late String _verificationId = widget.verificationId;
+  int? _resendToken;
   bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(4, (_) => TextEditingController());
-
-    _focusNodes = List.generate(4, (_) => FocusNode());
-
-    _startTimer();
-    for (final node in _focusNodes) {
-      node.addListener(_onFocusChanged);
-    }
-  }
-
-  void _onFocusChanged() {
-    setState(() {});
-  }
-
-  void _trySubmitIfComplete() {
-    if (_isSubmitting) {
-      return;
-    }
-    final code = _controllers.map((c) => c.text).join();
-    if (code.length == _controllers.length &&
-        code.runes.every((r) => r >= 48 && r <= 57)) {
-      _isSubmitting = true;
-      FocusManager.instance.primaryFocus?.unfocus();
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const RegistrationComplete()),
-      );
-    }
+    _resendToken = widget.resendToken;
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    for (final node in _focusNodes) {
-      node.removeListener(_onFocusChanged);
-      node.dispose();
-    }
+    _codeController.dispose();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() {
-      _secondsRemaining = 10;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_secondsRemaining > 0) {
-          _secondsRemaining--;
-        } else {
-          _timer?.cancel();
-        }
-      });
-    });
+  Future<void> _verify() async {
+    if (_isSubmitting || _codeController.text.length != 6) {
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .signInWithPhoneCode(
+            verificationId: _verificationId,
+            smsCode: _codeController.text,
+          );
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const CustomerDashboard()),
+        (route) => false,
+      );
+    } on FirebaseAuthException catch (error) {
+      _showError(error.message ?? 'The verification code is invalid.');
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
-  void _resendCode() {
-    if (_secondsRemaining > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please wait for the timer to expire.',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: AppColors.primary,
-        ),
-      );
+  Future<void> _resend() async {
+    await ref
+        .read(authRepositoryProvider)
+        .verifyPhoneNumber(
+          phoneNumber: widget.phoneNumber,
+          forceResendingToken: _resendToken,
+          verificationCompleted: (credential) async => ref
+              .read(authRepositoryProvider)
+              .signInWithPhoneCredential(credential),
+          verificationFailed: (error) =>
+              _showError(error.message ?? 'Unable to resend the code.'),
+          codeSent: (verificationId, resendToken) {
+            if (!mounted) {
+              return;
+            }
+            setState(() {
+              _verificationId = verificationId;
+              _resendToken = resendToken;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('A new SMS code was sent.')),
+            );
+          },
+          codeAutoRetrievalTimeout: (verificationId) =>
+              _verificationId = verificationId,
+        );
+  }
+
+  void _showError(String message) {
+    if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Verification code resent!',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: AppColors.success,
-      ),
-    );
-    _startTimer();
-  }
-
-  void _onNextPressed() {
-    final code = _controllers.map((c) => c.text).join();
-    if (code.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please enter the full 4-digit code',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const RegistrationComplete()),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
-
-  String _formatTime(int seconds) {
-    final s = seconds.toString().padLeft(2, '0');
-    return '00 : $s';
-  }
-
-  Widget _buildPinField(int index) => SizedBox(
-    width: 60,
-    height: 62,
-    child: Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.backspace &&
-            _controllers[index].text.isEmpty &&
-            index > 0) {
-          _controllers[index - 1].clear();
-          _focusNodes[index - 1].requestFocus();
-
-          setState(() {});
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
-      child: TextFormField(
-        controller: _controllers[index],
-        focusNode: _focusNodes[index],
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        maxLength: 1,
-        autofillHints: const [AutofillHints.oneTimeCode],
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        style: GoogleFonts.poppins(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: AppColors.labelPrimary,
-        ),
-        decoration: InputDecoration(
-          counterText: '',
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFC7C7CC), width: 1.2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(width: 1.5),
-          ),
-        ),
-        onChanged: (value) {
-          // Handle paste of multiple digits
-          if (value.length > 1) {
-            final chars = value.split('');
-
-            for (int i = 0; i < chars.length && i < _controllers.length; i++) {
-              _controllers[i].text = chars[i];
-            }
-
-            _focusNodes.last.unfocus();
-            setState(() {});
-            _trySubmitIfComplete();
-            return;
-          }
-
-          // Move forward when digit entered
-          if (value.isNotEmpty) {
-            if (index < _controllers.length - 1) {
-              _focusNodes[index + 1].requestFocus();
-            } else {
-              _focusNodes[index].unfocus();
-            }
-          }
-          // Move backward when field becomes empty
-          else {
-            if (index > 0) {
-              _focusNodes[index - 1].requestFocus();
-            }
-          }
-
-          setState(() {});
-          _trySubmitIfComplete();
-        },
-      ),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.backgroundColor,
+    appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
     body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 16),
-                  // Back Button
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFFC7C7CC),
-                            width: 1.2,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.arrow_back,
-                            size: 20,
-                            color: Color(0xFF8E8E93),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  // Title
-                  Text(
-                    'Verification',
-                    strutStyle: const StrutStyle(height: 1.2),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.labelPrimary,
-                      height: 1.2,
-                      letterSpacing: 0.38,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Subtitle
-                  Text(
-                    strutStyle: const StrutStyle(height: 1.33),
-                    'Enter the 4 digit verification code sent to your mail or phone number .',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.miscellaneous,
-                      height: 1.3,
-                      letterSpacing: 0.18,
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-                  // PIN boxes
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildPinField(0),
-                      const SizedBox(width: 12),
-                      _buildPinField(1),
-                      const SizedBox(width: 12),
-                      _buildPinField(2),
-                      const SizedBox(width: 12),
-                      _buildPinField(3),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Timer
-                  Center(
-                    child: Text(
-                      _formatTime(_secondsRemaining),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.gray,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Retry link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Didn't get verification? ",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: AppColors.gray,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: _resendCode,
-                        child: Text(
-                          'Retry',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: _secondsRemaining > 0
-                                ? AppColors.blue.withValues(alpha: 0.4)
-                                : AppColors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  const SizedBox(height: 32),
-                  // Next Button
-                  Center(
-                    child: MyButton(
-                      text: 'Next',
-                      onPressed: _onNextPressed,
-                      color: AppColors.buttonPrimary,
-                      width: MediaQuery.sizeOf(context).width * 0.9,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Verify your phone',
+              style: GoogleFonts.poppins(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(
+              'Enter the 6-digit SMS code sent to ${widget.phoneNumber}.',
+              style: GoogleFonts.poppins(color: AppColors.miscellaneous),
+            ),
+            const SizedBox(height: 36),
+            TextField(
+              controller: _codeController,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              maxLength: 6,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 12,
+              ),
+              decoration: InputDecoration(
+                counterText: '',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onChanged: (value) {
+                if (value.length == 6) {
+                  _verify();
+                }
+              },
+            ),
+            TextButton(
+              onPressed: _resend,
+              child: const Text('Resend SMS code'),
+            ),
+            const Spacer(),
+            MyButton(
+              text: _isSubmitting ? 'Verifying...' : 'Verify',
+              onPressed: _isSubmitting ? () {} : _verify,
+              color: AppColors.buttonPrimary,
+              width: double.infinity,
+            ),
+          ],
         ),
       ),
     ),

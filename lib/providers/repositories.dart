@@ -7,6 +7,17 @@ import '../repositories/interfaces/auth_repository.dart';
 import '../repositories/interfaces/cart_repository.dart';
 import '../repositories/interfaces/product_repository.dart';
 import '../repositories/product_repository.dart';
+import '../repositories/otp_repository.dart';
+import '../repositories/interfaces/otp_repository.dart';
+
+const _otpServerUrl = String.fromEnvironment(
+  'OTP_SERVER_URL',
+  defaultValue: 'http://10.0.2.2:8787',
+);
+const _turnstileToken = String.fromEnvironment(
+  'TURNSTILE_TOKEN',
+  defaultValue: 'XXXX.DUMMY.TOKEN.XXXX',
+);
 
 final sharedPreferencesProvider = Provider<Future<SharedPreferences>>(
   (ref) => SharedPreferences.getInstance(),
@@ -18,6 +29,13 @@ final authRepositoryProvider = Provider<AuthRepository>(
 
 final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(authRepositoryProvider).authStateChanges,
+);
+
+final otpRepositoryProvider = Provider<OtpRepository>(
+  (ref) => OtpRepositoryImpl(
+    baseUrl: Uri.parse(_otpServerUrl),
+    turnstileTokenProvider: () async => _turnstileToken,
+  ),
 );
 
 final productRepositoryProvider = Provider<ProductRepository>(
