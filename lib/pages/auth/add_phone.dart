@@ -101,9 +101,9 @@ class _AddPhoneState extends ConsumerState<AddPhone> {
   }
 
   void _confirmPhone(String phoneNumber) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const VerifyPhone()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const VerifyPhone()));
   }
 
   void _showConfirmationDialog(String phoneNumber) {
@@ -113,119 +113,115 @@ class _AddPhoneState extends ConsumerState<AddPhone> {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.2),
       builder: (context) => Dialog(
-          backgroundColor: Colors.white.withValues(alpha: 0.35),
-          elevation: 0,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                width: MediaQuery.sizeOf(context).width * 0.9,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.28),
+        backgroundColor: Colors.white.withValues(alpha: 0.35),
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              width: MediaQuery.sizeOf(context).width * 0.9,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                      bottom: 24,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8,
-                        right: 8,
-                        top: 8,
-                        bottom: 24,
-                      ),
-                      child: Text(
-                        'Is this correct?',
-                        style: GoogleFonts.poppins(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.labelPrimary,
-                        ),
+                    child: Text(
+                      'Is this correct?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.labelPrimary,
                       ),
                     ),
-                    Container(
-                      //width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 16,
+                  ),
+                  Container(
+                    //width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 19),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            countryFlag,
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            phoneNumber,
+                            style: GoogleFonts.poppins(
+                              fontSize: 17,
+                              color: AppColors.labelPrimary,
+                              letterSpacing: -0.43,
+                            ),
+                          ),
+                        ],
                       ),
-                      margin: const EdgeInsets.only(bottom: 19),
-                      decoration: BoxDecoration(
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MyButton(
+                        text: 'Edit',
+                        fontWeight: FontWeight.w500,
+                        textColor: AppColors.labelPrimary,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
                         color: AppColors.gray.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(40),
+                        width: 120,
+                        height: 54,
                       ),
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              countryFlag,
-                              style: const TextStyle(fontSize: 22),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              phoneNumber,
-                              style: GoogleFonts.poppins(
-                                fontSize: 17,
-                                color: AppColors.labelPrimary,
-                                letterSpacing: -0.43,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(width: 16),
+                      MyButton(
+                        text: 'Yes',
+                        fontWeight: FontWeight.w500,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _confirmPhone(phoneNumber);
+                        },
+                        color: AppColors.buttonPrimary,
+                        width: 120,
+                        height: 54,
                       ),
-                    ),
-                    const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        MyButton(
-                          text: 'Edit',
-                          fontWeight: FontWeight.w500,
-                          textColor: AppColors.labelPrimary,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          color: AppColors.gray.withValues(alpha: 0.25),
-                          width: 168,
-                          height: 54,
-                        ),
-                        const SizedBox(width: 16),
-                        MyButton(
-                          text: 'Yes',
-                          fontWeight: FontWeight.w500,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _confirmPhone(phoneNumber);
-                          },
-                          color: AppColors.buttonPrimary,
-                          width: 168,
-                          height: 54,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -238,172 +234,168 @@ class _AddPhoneState extends ConsumerState<AddPhone> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: const Color(0xFFC7C7CC),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.arrow_back,
-                                  size: 20,
-                                  color: Color(0xFF8E8E93),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          'Phone Number',
-                          style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.labelPrimary,
-                            height: 1.2,
-                            letterSpacing: 0.38,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please enter your phone number in addition with your country code',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.miscellaneous,
-                            height: 1.3,
-                            letterSpacing: 0.18,
-                          ),
-                        ),
-                        const SizedBox(height: 36),
-                        Container(
+    backgroundColor: AppColors.backgroundColor,
+    body: SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4F0),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, -3),
-                              ),
-                            ],
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFC7C7CC),
+                              width: 1.2,
+                            ),
                           ),
-                          child: TextFormField(
-                            controller: _phoneController,
-                            focusNode: _phoneFocusNode,
-                            keyboardType: TextInputType.phone,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.labelPrimary,
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_back,
+                              size: 20,
+                              color: Color(0xFF8E8E93),
                             ),
-                            decoration: _buildInputDecoration(
-                              hintText: 'Ex: (+233) 000-0000-00',
-                              controller: _phoneController,
-                              focusNode: _phoneFocusNode,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter your phone number';
-                              }
-                              final digitsOnly = value.replaceAll(
-                                RegExp(r'\D'),
-                                '',
-                              );
-                              if (digitsOnly.length < 7) {
-                                return 'Please enter a valid phone number';
-                              }
-                              return null;
-                            },
                           ),
                         ),
-                        const Spacer(),
-                        const SizedBox(height: 32),
-                        Center(
-                          child: MyButton(
-                            text: 'Next',
-                            onPressed: _onNextPressed,
-                            color: AppColors.buttonPrimary,
-                            width: MediaQuery.sizeOf(context).width * 0.9,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 28),
+                    Text(
+                      'Phone Number',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.labelPrimary,
+                        height: 1.2,
+                        letterSpacing: 0.38,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Please enter your phone number in addition with your country code',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.miscellaneous,
+                        height: 1.3,
+                        letterSpacing: 0.18,
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F4F0),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 4,
+                            offset: const Offset(0, -3),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: _phoneController,
+                        focusNode: _phoneFocusNode,
+                        keyboardType: TextInputType.phone,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.labelPrimary,
+                        ),
+                        decoration: _buildInputDecoration(
+                          hintText: 'Ex: (+233) 000-0000-00',
+                          controller: _phoneController,
+                          focusNode: _phoneFocusNode,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          final digitsOnly = value.replaceAll(
+                            RegExp(r'\D'),
+                            '',
+                          );
+                          if (digitsOnly.length < 7) {
+                            return 'Please enter a valid phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const Spacer(),
+                    const SizedBox(height: 32),
+                    Center(
+                      child: MyButton(
+                        text: 'Next',
+                        onPressed: _onNextPressed,
+                        color: AppColors.buttonPrimary,
+                        width: MediaQuery.sizeOf(context).width * 0.9,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
             ),
+          ),
         ),
       ),
-    );
+    ),
+  );
 
   InputDecoration _buildInputDecoration({
     required String hintText,
     required TextEditingController controller,
     required FocusNode focusNode,
   }) => InputDecoration(
-      hintText: hintText,
-      hintStyle: GoogleFonts.poppins(
-        color: const Color(0xFFBCBCBC),
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-      ),
-      errorStyle: const TextStyle(fontSize: 0, height: 0),
-      isDense: true,
-      filled: true,
-      fillColor: Colors.transparent,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      suffixIcon: (focusNode.hasFocus && controller.text.isNotEmpty)
-          ? GestureDetector(
-              onTap: () {
-                controller.clear();
-              },
-              child: const Icon(
-                Icons.cancel,
-                color: Color(0xFFBCBCBC),
-                size: 20,
-              ),
-            )
-          : null,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD1D1D6)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-      ),
-    );
+    hintText: hintText,
+    hintStyle: GoogleFonts.poppins(
+      color: const Color(0xFFBCBCBC),
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+    ),
+    errorStyle: const TextStyle(fontSize: 0, height: 0),
+    isDense: true,
+    filled: true,
+    fillColor: Colors.transparent,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    suffixIcon: (focusNode.hasFocus && controller.text.isNotEmpty)
+        ? GestureDetector(
+            onTap: () {
+              controller.clear();
+            },
+            child: const Icon(Icons.cancel, color: Color(0xFFBCBCBC), size: 20),
+          )
+        : null,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFD1D1D6)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+    ),
+  );
 }
