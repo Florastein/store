@@ -12,6 +12,7 @@ void main() {
     final repository = OtpRepositoryImpl(
       baseUrl: Uri.parse('https://otp.example.com'),
       turnstileTokenProvider: () async => 'token',
+      deviceFingerprintProvider: () async => 'device_fingerprint_123456789',
       client: MockClient((request) async {
         expect(request.url.path, '/send-otp');
         requestBody = jsonDecode(request.body) as Map<String, dynamic>;
@@ -30,6 +31,7 @@ void main() {
       'name': 'User',
       'purpose': 'login',
       'turnstileToken': 'token',
+      'deviceFingerprint': 'device_fingerprint_123456789',
     });
   });
 
@@ -37,6 +39,7 @@ void main() {
     final repository = OtpRepositoryImpl(
       baseUrl: Uri.parse('https://otp.example.com'),
       turnstileTokenProvider: () async => 'token',
+      deviceFingerprintProvider: () async => 'device_fingerprint_123456789',
       client: MockClient(
         (_) async => http.Response('{"success":true,"proof":"signed"}', 200),
       ),
@@ -55,6 +58,7 @@ void main() {
     final repository = OtpRepositoryImpl(
       baseUrl: Uri.parse('https://otp.example.com'),
       turnstileTokenProvider: () async => 'token',
+      deviceFingerprintProvider: () async => 'device_fingerprint_123456789',
       client: MockClient(
         (_) async => http.Response('{"error":"Invalid code"}', 400),
       ),

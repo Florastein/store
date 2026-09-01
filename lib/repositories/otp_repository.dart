@@ -3,19 +3,23 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:store/repositories/interfaces/otp_repository.dart';
 
-typedef TurnstileTokenProvider = Future<String> Function();
+typedef TurnstileTokenProvider = Future<String?> Function();
+typedef DeviceFingerprintProvider = Future<String> Function();
 
 class OtpRepositoryImpl implements OtpRepository {
   OtpRepositoryImpl({
     required Uri baseUrl,
     required TurnstileTokenProvider turnstileTokenProvider,
+    required DeviceFingerprintProvider deviceFingerprintProvider,
     http.Client? client,
   }) : _baseUrl = baseUrl,
        _turnstileTokenProvider = turnstileTokenProvider,
+       _deviceFingerprintProvider = deviceFingerprintProvider,
        _client = client ?? http.Client();
 
   final Uri _baseUrl;
   final TurnstileTokenProvider _turnstileTokenProvider;
+  final DeviceFingerprintProvider _deviceFingerprintProvider;
   final http.Client _client;
 
   @override
@@ -25,15 +29,12 @@ class OtpRepositoryImpl implements OtpRepository {
     String? name,
   }) async {
     final token = await _turnstileTokenProvider();
-    if (token.trim().isEmpty) {
-      throw const OtpException(
-        'Bot verification is unavailable. Please try again.',
-      );
-    }
+    final deviceFingerprint = await _deviceFingerprintProvider();
     await _post('/send-otp', {
       'email': email.trim(),
       'purpose': purpose.apiValue,
-      'turnstileToken': token,
+      'deviceFingerprint': deviceFingerprint,
+      if (token != null && token.trim().isNotEmpty) 'turnstileToken': token,
       if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
     });
   }

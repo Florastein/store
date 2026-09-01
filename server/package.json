@@ -9,7 +9,7 @@
     "deploy": "wrangler deploy",
     "deploy:prod": "wrangler deploy --env production",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && mkdir -p .test-dist/test && cp test/security.test.js test/otp-do.test.js .test-dist/test/ && node --test .test-dist/test/*.test.js"
+    "test": "tsc -p tsconfig.test.json && mkdir -p .test-dist/test && cp test/security.test.js test/otp-do.test.js test/rate-limit-do.test.js .test-dist/test/ && node --test .test-dist/test/*.test.js"
   },
   "dependencies": {
     "@emailjs/nodejs": "^5.0.2"

@@ -1,5 +1,5 @@
 # Copy this file to `.dev.vars` and fill in your EmailJS credentials,
-# the OTP HMAC secret, and a Turnstile secret.
+# the OTP HMAC secret, and optionally a Turnstile secret.
 # `.dev.vars` is used by `wrangler dev` for local development and must NOT be committed.
 
 # EmailJS (server-to-server) credentials
@@ -13,12 +13,12 @@ EMAILJS_PRIVATE_KEY=YOUR_PRIVATE_KEY
 # Must match the value your trusted backend uses to verify proofs.
 OTP_SECRET=YOUR_OTP_HMAC_SECRET
 
-# Turnstile secret key.
+# Optional Turnstile secret key. If both this secret and a request token are
+# present, the token is verified as an additional security layer.
 # LOCAL DEV: use the test secret 1x0000000000000000000000000000000AA and the
 # test token XXXX.DUMMY.TOKEN.XXXX in /send-otp.
 # PRODUCTION: use a real Turnstile secret via `wrangler secret put`.
-TURNSTILE_SECRET_KEY=YOUR_TURNSTILE_SECRET_KEY
+#TURNSTILE_SECRET_KEY=YOUR_TURNSTILE_SECRET_KEY
 
-# Optional: comma-separated allowlist of browser origins for CORS.
-# Leave commented out to deny cross-origin browser calls (fail-closed).
-#CORS_ORIGINS=https://your-app.example.com
+# CORS permits all origins. Device fingerprint, IP, and email throttles protect
+# the public OTP endpoint.

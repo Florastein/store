@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "store-otp-worker",
   "main": "src/index.ts",
-  "compatibility_date": "2026-08-01",
+  "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "c82d4aeacfd4d8317169866468c89fb2",
   "observability": {
@@ -18,8 +18,7 @@
       "EMAILJS_TEMPLATE_ID",
       "EMAILJS_PUBLIC_KEY",
       "EMAILJS_PRIVATE_KEY",
-      "OTP_SECRET",
-      "TURNSTILE_SECRET_KEY"
+      "OTP_SECRET"
     ]
   },
   "durable_objects": {
@@ -27,6 +26,10 @@
       {
         "name": "OTP_DO",
         "class_name": "OtpDurableObject"
+      },
+      {
+        "name": "RATE_LIMIT_DO",
+        "class_name": "RateLimitDurableObject"
       }
     ]
   },
@@ -34,6 +37,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["OtpDurableObject"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["RateLimitDurableObject"]
     }
   ]
 }

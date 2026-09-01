@@ -90,18 +90,15 @@ A bare boolean alone does **not** create a Firebase session. The intended flow:
 > custom token after proof verification. This Worker does not depend on the
 > Firebase Admin SDK.
 
-### Turnstile (bot protection) on `/send-otp`
+### Abuse protection on `/send-otp`
 
-`/send-otp` requires a `turnstileToken` in the request body. It is verified by
-calling Cloudflare's `siteverify` endpoint with `TURNSTILE_SECRET_KEY`. There is
-**no local bypass** — verification always makes the siteverify call.
+`/send-otp` requires an opaque installation `deviceFingerprint`. The Worker
+applies independent fixed-window limits of 5 requests per device and 20 per IP
+every 10 minutes, in addition to the existing 60-second per-email cooldown.
+Identifiers are SHA-256 hashed before they are used as Durable Object names.
 
-**Local development:** set `TURNSTILE_SECRET_KEY` to the Turnstile **test
-secret** and use the **test token** `XXXX.DUMMY.TOKEN.XXXX` in your request
-body. The test secret always passes `siteverify` for test tokens and always
-rejects real tokens. Production secrets never match the test secret, so this
-cannot be confused with real enforcement. See
-[Cloudflare Turnstile testing docs](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+Turnstile is optional defense-in-depth. When both `TURNSTILE_SECRET_KEY` and a
+request `turnstileToken` are present, the token is verified with siteverify.
 
 ### CORS and Origin policy
 
@@ -111,9 +108,8 @@ responses, allowing browser requests from every origin.
 ### Secret validation
 
 All required secrets (`EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`,
-`EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`, `OTP_SECRET`,
-`TURNSTILE_SECRET_KEY`) are validated on every request. `OTP_SECRET` must be
-at least 32 characters. Missing or short secrets produce a loud `500`.
+`EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY`, `OTP_SECRET`) are validated on
+every request. `OTP_SECRET` must be at least 32 characters.
 
 ---
 
@@ -121,7 +117,7 @@ at least 32 characters. Missing or short secrets produce a loud `500`.
 
 | Method | Path          | Description                                             |
 |--------|---------------|---------------------------------------------------------|
-| `POST` | `/send-otp`   | Send an OTP email. Body: `{ email, name?, purpose?, turnstileToken }` |
+| `POST` | `/send-otp`   | Send an OTP email. Body: `{ email, name?, purpose?, deviceFingerprint, turnstileToken? }` |
 | `POST` | `/verify-otp` | Verify a previously sent OTP. Body: `{ email, otp, purpose? }` |
 | `OPTIONS` | `/`        | CORS preflight; all origins are allowed.               |
 
@@ -133,7 +129,8 @@ at least 32 characters. Missing or short secrets produce a loud `500`.
   "email": "user@example.com",
   "name": "Jane",
   "purpose": "email_confirmation",
-  "turnstileToken": "<turnstile-widget-token>"
+  "deviceFingerprint": "opaque-installation-id",
+  "turnstileToken": "<optional-turnstile-widget-token>"
 }
 
 // 200 response
@@ -143,7 +140,7 @@ at least 32 characters. Missing or short secrets produce a loud `500`.
 - The OTP is always generated **server-side** and is **never returned**.
 - `purpose` supports `email_confirmation`, `password_reset`, and `login`.
   Omitting `purpose` defaults to `email_confirmation`.
-- Requires a valid `turnstileToken`.
+- Requires a 20–128 character opaque `deviceFingerprint`.
 
 ### `POST /verify-otp`
 
@@ -193,8 +190,7 @@ npm install
 ### 3. Configure secrets
 
 For **local development**, copy `.dev.vars.example` → `.dev.vars` and fill in
-the values (see `.dev.vars.example`; local Turnstile uses the test secret — see
-above).
+the required values. Turnstile configuration is optional.
 
 For **deployment**, set each value as a Cloudflare secret:
 
@@ -204,6 +200,7 @@ npx wrangler secret put EMAILJS_TEMPLATE_ID
 npx wrangler secret put EMAILJS_PUBLIC_KEY
 npx wrangler secret put EMAILJS_PRIVATE_KEY
 npx wrangler secret put OTP_SECRET        # >= 32 chars, e.g. openssl rand -hex 32
+# Optional defense-in-depth:
 npx wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
@@ -213,9 +210,8 @@ npx wrangler secret put TURNSTILE_SECRET_KEY
 
 ### 4. Durable Objects
 
-The Worker requires a Durable Object binding named `OTP_DO` backed by class
-`OtpDurableObject`. This is declared in `wrangler.jsonc` (do not edit the
-migration unless you change DO classes). No KV namespace is needed.
+The Worker uses the `OTP_DO` and `RATE_LIMIT_DO` Durable Object bindings. These
+are declared in `wrangler.jsonc`. No KV namespace is needed.
 
 ---
 
@@ -225,11 +221,11 @@ migration unless you change DO classes). No KV namespace is needed.
 npm run dev            # wrangler dev, uses .dev.vars
 ```
 
-Example with the development Turnstile test token:
+Example without Turnstile:
 ```bash
 curl -X POST http://localhost:8787/send-otp \
   -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com","name":"Jane","purpose":"login","turnstileToken":"XXXX.DUMMY.TOKEN.XXXX"}'
+  -d '{"email":"you@example.com","name":"Jane","purpose":"login","deviceFingerprint":"local_device_fingerprint_12345"}'
 ```
 
 ## Type checking / tests
@@ -256,24 +252,26 @@ npm run deploy         # dev/main environment
 | `EMAILJS_PUBLIC_KEY`    | secret        | yes      | EmailJS public key                             |
 | `EMAILJS_PRIVATE_KEY`   | secret        | yes      | EmailJS private key (recommended for security) |
 | `OTP_SECRET`            | secret        | yes      | HMAC key for OTP hashing + proof signing (≥ 32 chars) |
-| `TURNSTILE_SECRET_KEY`  | secret        | yes      | Turnstile secret key                           |
+| `TURNSTILE_SECRET_KEY`  | secret        | no       | Optional Turnstile secret key                  |
 | `OTP_EMAIL_FROM`        | var           | no       | Sender display name (default: `Store`)         |
 | `OTP_DO`                | DO binding    | yes      | Durable Object for OTP/cooldown state          |
+| `RATE_LIMIT_DO`         | DO binding    | yes      | Device/IP fixed-window rate limiting           |
 
 > **Security:**
 > - Never use the *public* key alone for server–server sends. The private key
 >   must live only in Worker secrets.
 > - Keep `.dev.vars` out of git.
 > - CORS permits requests from every browser origin.
-> - Turnstile always calls siteverify; there is no local bypass. Use the
->   official test secret and test token for local dev (see README).
+> - Device fingerprints are client-generated installation identifiers, not
+>   trusted authentication. IP and per-email limits remain essential layers.
 
 ---
 
 ## Design notes
 
 - `src/index.ts` — Worker entrypoint: routing, input validation, secret
-  validation, Turnstile, CORS, EmailJS delivery, and signed proof generation.
+  validation, optional Turnstile, CORS, EmailJS delivery, and signed proofs.
+- `src/rate-limit-do.ts` — atomic fixed-window device and IP rate limiting.
 - `src/otp-do.ts` — `OtpDurableObject`: atomic `beginIssue`/`commitIssue`/
   `abortIssue` lifecycle, attempt counting, consume-once, expiry. `beginIssue`
   stages the digest/purpose in reservation keys and never overwrites

@@ -9,15 +9,13 @@ import '../repositories/interfaces/product_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/otp_repository.dart';
 import '../repositories/interfaces/otp_repository.dart';
+import '../services/device_fingerprint_service.dart';
 
 const _otpServerUrl = String.fromEnvironment(
   'OTP_SERVER_URL',
-  defaultValue: 'http://10.0.2.2:8787',
+  defaultValue: 'https://store-otp-worker.vandalsavage111.workers.dev',
 );
-const _turnstileToken = String.fromEnvironment(
-  'TURNSTILE_TOKEN',
-  defaultValue: 'XXXX.DUMMY.TOKEN.XXXX',
-);
+const _turnstileToken = String.fromEnvironment('TURNSTILE_TOKEN');
 
 final sharedPreferencesProvider = Provider<Future<SharedPreferences>>(
   (ref) => SharedPreferences.getInstance(),
@@ -31,12 +29,16 @@ final authStateProvider = StreamProvider<User?>(
   (ref) => ref.watch(authRepositoryProvider).authStateChanges,
 );
 
-final otpRepositoryProvider = Provider<OtpRepository>(
-  (ref) => OtpRepositoryImpl(
+final otpRepositoryProvider = Provider<OtpRepository>((ref) {
+  final fingerprintService = DeviceFingerprintService(
+    preferences: ref.watch(sharedPreferencesProvider),
+  );
+  return OtpRepositoryImpl(
     baseUrl: Uri.parse(_otpServerUrl),
     turnstileTokenProvider: () async => _turnstileToken,
-  ),
-);
+    deviceFingerprintProvider: fingerprintService.getFingerprint,
+  );
+});
 
 final productRepositoryProvider = Provider<ProductRepository>(
   (ref) => ProductRepositoryImpl(),

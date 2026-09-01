@@ -14,20 +14,22 @@
  *   - Verification is fail-uniform to the caller, consumes the OTP once, caps
  *     failed attempts at 5, and returns a short-lived HMAC-signed proof that
  *     binds email, purpose, expiry and a nonce.
- *   - The public send endpoint is protected by Turnstile (fail-closed).
+ *   - The public send endpoint is rate-limited by installation fingerprint,
+ *     client IP, and normalized email. Turnstile is optional defense-in-depth.
  *
  * Required secrets (wrangler secret put): EMAILJS_SERVICE_ID,
  * EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY, OTP_SECRET
- * (>= 32 chars), TURNSTILE_SECRET_KEY.
+ * (>= 32 chars). TURNSTILE_SECRET_KEY is optional.
  *
  * Endpoints:
- *   POST /send-otp    -> { email, name?, purpose?, turnstileToken }
+ *   POST /send-otp    -> { email, name?, purpose?, deviceFingerprint, turnstileToken? }
  *   POST /verify-otp  -> { email, otp, purpose? }
  *   OPTIONS           -> CORS preflight (all origins allowed)
  */
 
 import emailjs from '@emailjs/nodejs';
 import { OtpDurableObject } from './otp-do.js';
+import { RateLimitDurableObject } from './rate-limit-do.js';
 
 // EmailJS internal storage provider; kept separate from OTP security state.
 declare global {
@@ -35,7 +37,7 @@ declare global {
 }
 
 // Re-export for wrangler discovery
-export { OtpDurableObject };
+export { OtpDurableObject, RateLimitDurableObject };
 
 /* -------------------------------------------------------------------------- */
 /*                              Constants                                      */
@@ -49,13 +51,15 @@ const MAX_BODY_BYTES = 4096;
 const OTP_LENGTH = 6;
 const PROOF_TTL_MS = 5 * 60 * 1000; // proof valid 5 minutes
 const MIN_OTP_SECRET_LENGTH = 32;
+const DEVICE_RATE_LIMIT = 5;
+const IP_RATE_LIMIT = 20;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const REQUIRED_SECRETS = [
   'EMAILJS_SERVICE_ID',
   'EMAILJS_TEMPLATE_ID',
   'EMAILJS_PUBLIC_KEY',
   'EMAILJS_PRIVATE_KEY',
   'OTP_SECRET',
-  'TURNSTILE_SECRET_KEY',
 ] as const;
 type RequiredSecret = (typeof REQUIRED_SECRETS)[number];
 
@@ -112,9 +116,10 @@ interface Env {
   EMAILJS_PUBLIC_KEY: string;
   EMAILJS_PRIVATE_KEY: string;
   OTP_SECRET: string;
-  TURNSTILE_SECRET_KEY: string;
+  TURNSTILE_SECRET_KEY?: string;
   OTP_EMAIL_FROM: string;
   OTP_DO: DurableObjectNamespace;
+  RATE_LIMIT_DO: DurableObjectNamespace;
 }
 
 type Purpose = (typeof VALID_PURPOSES)[number];
@@ -200,6 +205,16 @@ export async function hashOtp(otp: string, secret: string): Promise<string> {
   return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
 }
 
 /**
@@ -427,6 +442,26 @@ async function callOtpDo(
   return (await res.json()) as { ok?: boolean; error?: string; [key: string]: unknown };
 }
 
+async function consumeRateLimit(
+  env: Env,
+  scope: 'device' | 'ip',
+  identifier: string,
+  limit: number,
+): Promise<void> {
+  const digest = await sha256Hex(`${scope}:${identifier}`);
+  const stub = env.RATE_LIMIT_DO.get(env.RATE_LIMIT_DO.idFromName(`${scope}:${digest}`));
+  const response = await stub.fetch(new Request('https://rate-limit-do/hit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ limit, windowMs: RATE_LIMIT_WINDOW_MS }),
+  }));
+  const result = await response.json<{ ok?: boolean; retryAfterMs?: number }>();
+  if (!response.ok || result.ok !== true) {
+    const retrySeconds = Math.max(1, Math.ceil((result.retryAfterMs ?? RATE_LIMIT_WINDOW_MS) / 1000));
+    throw new HttpError(429, `Too many requests. Please try again in ${retrySeconds}s.`);
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*                          EmailJS Integration                                */
 /* -------------------------------------------------------------------------- */
@@ -538,8 +573,13 @@ async function handleSendOtp(
   }
 
   const turnstileToken = body.turnstileToken;
-  if (!isString(turnstileToken)) {
-    throw new HttpError(400, 'Field `turnstileToken` is required.');
+  if (turnstileToken !== undefined && !isString(turnstileToken)) {
+    throw new HttpError(400, 'Field `turnstileToken` must be a non-empty string.');
+  }
+
+  const deviceFingerprint = body.deviceFingerprint;
+  if (!isString(deviceFingerprint) || !/^[A-Za-z0-9_-]{20,128}$/.test(deviceFingerprint)) {
+    throw new HttpError(400, 'Field `deviceFingerprint` must be a valid installation identifier.');
   }
 
   const clientIp =
@@ -547,17 +587,15 @@ async function handleSendOtp(
     request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ??
     'unknown';
 
-  const turnstileResult = await verifyTurnstile(
-    turnstileToken,
-    env.TURNSTILE_SECRET_KEY,
-    clientIp,
-  );
-  if (!turnstileResult.success) {
-    structuredLog('warn', 'turnstile.rejected', {
-      purpose,
-      error: turnstileResult.error,
-    });
-    throw new HttpError(403, 'Turnstile verification failed.');
+  await consumeRateLimit(env, 'device', deviceFingerprint, DEVICE_RATE_LIMIT);
+  await consumeRateLimit(env, 'ip', clientIp, IP_RATE_LIMIT);
+
+  if (isString(turnstileToken) && isString(env.TURNSTILE_SECRET_KEY)) {
+    const turnstileResult = await verifyTurnstile(turnstileToken, env.TURNSTILE_SECRET_KEY, clientIp);
+    if (!turnstileResult.success) {
+      structuredLog('warn', 'turnstile.rejected', { purpose, error: turnstileResult.error });
+      throw new HttpError(403, 'Turnstile verification failed.');
+    }
   }
 
   const reservationId = newReservationId();
@@ -683,7 +721,7 @@ async function handleVerifyOtp(
 /* -------------------------------------------------------------------------- */
 
 export default {
-  fetch(request: Request, env: Env): Response | Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const method = request.method;
     const allowOrigin = '*';
@@ -698,10 +736,10 @@ export default {
       validateSecrets(env);
 
       if (method === 'POST' && url.pathname === '/send-otp') {
-        return handleSendOtp(request, env, allowOrigin);
+        return await handleSendOtp(request, env, allowOrigin);
       }
       if (method === 'POST' && url.pathname === '/verify-otp') {
-        return handleVerifyOtp(request, env, allowOrigin);
+        return await handleVerifyOtp(request, env, allowOrigin);
       }
 
       return json(
