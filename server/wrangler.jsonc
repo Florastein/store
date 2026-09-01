@@ -1,36 +1,28 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "store-otp-worker",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "head_sampling_rate": 1.0
   },
   "vars": {
     "OTP_EMAIL_FROM": "Store"
   },
-  "kv_namespaces": [
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "OTP_DO",
+        "class_name": "OtpDurableObject"
+      }
+    ]
+  },
+  "migrations": [
     {
-      "binding": "OTP_KV",
-      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+      "tag": "v1",
+      "new_sqlite_classes": ["OtpDurableObject"]
     }
-  ],
-  "env": {
-    "production": {
-      "name": "store-otp-worker",
-      "main": "src/index.js",
-      "compatibility_date": "2026-08-01",
-      "compatibility_flags": ["nodejs_compat"],
-      "vars": {
-        "OTP_EMAIL_FROM": "Store"
-      },
-      "kv_namespaces": [
-        {
-          "binding": "OTP_KV",
-          "id": "REPLACE_WITH_YOUR_PRODUCTION_KV_NAMESPACE_ID"
-        }
-      ]
-    }
-  }
+  ]
 }
