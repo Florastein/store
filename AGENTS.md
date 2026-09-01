@@ -115,19 +115,33 @@ test/
 ### Shared Components (DRY)
 ```
 lib/pages/auth/
-├── create_password.dart      # Shared
+├── create_password.dart      # Shared (creates Firebase user)
 ├── add_phone.dart            # Shared
 ├── verify_phone.dart         # Shared (shop imports this)
 ├── registration_complete.dart # Customer version
+├── forgot_password.dart      # sendPasswordResetEmail
 └── shop/
     ├── registration_complete.dart # Navigates to CreatePassword
-    └── create_password.dart  # Shop version
+    ├── create_password.dart  # Shop version (creates Firebase user)
+    └── create_account.dart   # Stores shop/customer prefs
 ```
 
-### Auth State (Future)
-- **Firebase Auth** with custom claims (`role: 'customer' | 'shop'`)
+### Auth Repository (Real Firebase Auth)
+- **Interface**: `lib/repositories/interfaces/auth_repository.dart`
+- **Implementation**: `lib/repositories/auth_repository.dart` (wraps `FirebaseAuth`)
+- **State**: `lib/providers/repositories.dart`:
+  - `authRepositoryProvider` (DI) and `authStateProvider` (Stream of `User?`)
+- **Methods**: `authStateChanges`, `currentUser`, `signUpWithEmail`, `signInWithEmail`,
+  `sendPasswordReset`, `updateProfile`, `signOut`
+- **Where the user is created**: `CreatePassword` pages (email + password + displayName).
+  Login uses `signInWithEmailAndPassword`; Forgot password uses `sendPasswordResetEmail`.
+- **Errors**: map `FirebaseAuthException` codes (`email-already-in-use`, `wrong-password`,
+  `user-not-found`, `invalid-email`, `user-not-found`, etc.) to user-friendly messages.
+
+### Auth State (In Place)
+- **Firebase Auth** with `firebase_auth` (email/password) - live and wired to UI
 - **AuthRepository** interface for auth operations
-- **Role-based routing** via `go_router`
+- **Role-based routing** via `go_router` (future) - currently `MaterialPageRoute`
 
 ---
 
@@ -262,7 +276,7 @@ When making changes, verify:
 | Fonts | `google_fonts` | ^8.1.0 |
 | Icons | `hugeicons` | ^1.1.7 |
 | Animations | `lottie` | ^3.3.3 |
-| Firebase | `firebase_core`, `firebase_analytics`, `firebase_crashlytics` | ^3.15.2, ^11.4.0, ^4.3.0 |
+| Firebase | `firebase_core`, `firebase_auth`, `firebase_analytics`, `firebase_crashlytics` | ^3.15.2, ^5.6.1, ^11.4.0, ^4.3.0 |
 | Testing | `mocktail` | ^1.0.4 |
 
 ---

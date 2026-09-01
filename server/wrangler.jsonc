@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "store-otp-worker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "OTP_EMAIL_FROM": "Store"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "OTP_KV",
+      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+    }
+  ],
+  "env": {
+    "production": {
+      "name": "store-otp-worker",
+      "main": "src/index.js",
+      "compatibility_date": "2026-08-01",
+      "compatibility_flags": ["nodejs_compat"],
+      "vars": {
+        "OTP_EMAIL_FROM": "Store"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "OTP_KV",
+          "id": "REPLACE_WITH_YOUR_PRODUCTION_KV_NAMESPACE_ID"
+        }
+      ]
+    }
+  }
+}

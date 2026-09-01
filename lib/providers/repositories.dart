@@ -1,12 +1,23 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../repositories/auth_repository.dart';
 import '../repositories/cart_repository.dart';
+import '../repositories/interfaces/auth_repository.dart';
 import '../repositories/interfaces/cart_repository.dart';
 import '../repositories/interfaces/product_repository.dart';
 import '../repositories/product_repository.dart';
 
 final sharedPreferencesProvider = Provider<Future<SharedPreferences>>(
   (ref) => SharedPreferences.getInstance(),
+);
+
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepositoryImpl(),
+);
+
+final authStateProvider = StreamProvider<User?>(
+  (ref) => ref.watch(authRepositoryProvider).authStateChanges,
 );
 
 final productRepositoryProvider = Provider<ProductRepository>(

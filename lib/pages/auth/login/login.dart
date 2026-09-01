@@ -1,19 +1,24 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 import 'package:store/pages/auth/create_account.dart';
+import 'package:store/pages/customer/dashboard.dart';
 import 'package:store/pages/auth/login/verify_phone.dart';
+import 'package:store/pages/auth/forgot_password.dart';
+import '../../../providers/repositories.dart';
 
-class Login extends StatefulWidget {
+class Login extends ConsumerStatefulWidget {
   const Login({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  ConsumerState<Login> createState() => _LoginState();
 }
 
-class _LoginState extends State<Login> {
+class _LoginState extends ConsumerState<Login> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -25,6 +30,7 @@ class _LoginState extends State<Login> {
 
   bool _isEmailTab = true;
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -64,15 +70,77 @@ class _LoginState extends State<Login> {
     setState(() {});
   }
 
-  void _onNextPressed() {
-    if (_formKey.currentState!.validate()) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Welcome back!', style: GoogleFonts.poppins()),
-          backgroundColor: AppColors.success,
-        ),
-      );
+  void _snack(String message, Color color) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message, style: GoogleFonts.poppins()), backgroundColor: color));
+  }
+
+  void _showError(Object error) {
+    String message = 'Unable to sign in. Please check your credentials.';
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+          message = 'No account found with this email.';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid email or password.';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Please try again later.';
+          break;
+      }
+    }
+    _snack(message, AppColors.error);
+  }
+
+  Future<void> _onNextPressed() async {
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    if (_isEmailTab) {
+      try {
+        await ref
+            .read(authRepositoryProvider)
+            .signInWithEmail(
+              email: _emailController.text,
+              password: _passwordController.text,
+            );
+        if (!mounted) {
+          return;
+        }
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const CustomerDashboard()),
+          (route) => false,
+        );
+      } catch (e) {
+        _showError(e);
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
+    } else {
+      // Phone login flow handled via OTP verification.
+      if (!mounted) {
+        return;
+      }
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => const VerifyPhone()));
@@ -431,13 +499,9 @@ class _LoginState extends State<Login> {
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Reset password link sent!',
-                                style: GoogleFonts.poppins(),
-                              ),
-                              backgroundColor: AppColors.primary,
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const ForgotPassword(),
                             ),
                           );
                         },

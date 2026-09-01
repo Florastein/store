@@ -4,8 +4,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:store/pages/splash/splash_one.dart';
 
-import 'pages/customer/dashboard.dart';
-
 import 'firebase_options.dart';
 
 void main() async {

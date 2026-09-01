@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Local dev secrets
+.dev.vars*
+!.dev.vars.example
+
+# Wrangler state
+.wrangler/
+.wrangler.local.state
+
+# Build output
+dist/
+coverage/
+
+# Logs
+*.log

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{{email_subject}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#faf8f5;color:#000000;font-family:Poppins,Arial,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      Your Store verification code is {{otp_code}}. It expires in {{otp_expiry_minutes}} minutes.
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#faf8f5;">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:560px;">
+            <tr>
+              <td style="padding:0 4px 24px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center" style="width:48px;height:48px;border-radius:14px;background:#0a0a0a;color:#ffffff;font-size:25px;font-weight:700;line-height:48px;">S</td>
+                    <td style="padding-left:12px;color:#0a0a0a;font-size:21px;font-weight:700;letter-spacing:-0.4px;">store</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #ece8e2;border-radius:24px;padding:44px 40px;box-shadow:0 14px 40px rgba(10,10,10,0.06);">
+                <div style="margin:0 0 18px;color:#595959;font-size:11px;font-weight:700;line-height:16px;letter-spacing:1.8px;">{{email_eyebrow}}</div>
+                <h1 style="margin:0 0 14px;color:#000000;font-size:30px;font-weight:700;line-height:38px;letter-spacing:-0.7px;">{{email_heading}}</h1>
+                <p style="margin:0 0 28px;color:#595959;font-size:15px;line-height:24px;">Hello {{to_name}},</p>
+                <p style="margin:0 0 28px;color:#333333;font-size:15px;line-height:25px;">{{email_intro}}</p>
+                <div style="margin:0 0 28px;padding:26px 20px;border-radius:18px;background:#faf8f5;border:1px solid #ece8e2;text-align:center;">
+                  <div style="margin:0 0 10px;color:#8e8e93;font-size:11px;font-weight:700;line-height:16px;letter-spacing:1.5px;">YOUR VERIFICATION CODE</div>
+                  <div style="color:#0a0a0a;font-family:'Courier New',monospace;font-size:38px;font-weight:700;line-height:46px;letter-spacing:9px;">{{otp_code}}</div>
+                </div>
+                <p style="margin:0 0 26px;color:#333333;font-size:14px;line-height:23px;">
+                  Enter this code in Store to {{email_action}}. It expires in <strong>{{otp_expiry_minutes}} minutes</strong> and can only be used once.
+                </p>
+                <div style="border-left:3px solid #c27d38;padding:12px 0 12px 16px;color:#595959;font-size:13px;line-height:21px;">{{security_note}}</div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:24px 20px 0;color:#8e8e93;font-size:12px;line-height:20px;">
+                This is an automated security message from {{from_name}}.<br>
+                Never share your verification code with anyone.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Store OTP email preview</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="preview-shell">
+      <header class="preview-toolbar">
+        <div>
+          <p class="preview-kicker">EMAILJS TEMPLATE PREVIEW</p>
+          <h1>Store security email</h1>
+        </div>
+        <label>
+          Email purpose
+          <select id="purpose">
+            <option value="email_confirmation">Email confirmation</option>
+            <option value="password_reset">Password reset</option>
+            <option value="login">Login</option>
+          </select>
+        </label>
+      </header>
+
+      <section class="email-canvas" aria-live="polite">
+        <div class="brand"><span class="brand-mark">S</span><span>store</span></div>
+        <article class="email-card">
+          <p class="eyebrow" id="eyebrow"></p>
+          <h2 id="heading"></h2>
+          <p class="muted">Hello Ama,</p>
+          <p id="intro"></p>
+          <div class="code-panel">
+            <span>YOUR VERIFICATION CODE</span>
+            <strong>482 910</strong>
+          </div>
+          <p>Enter this code in Store to <span id="action"></span>. It expires in <strong>5 minutes</strong> and can only be used once.</p>
+          <p class="security-note" id="securityNote"></p>
+        </article>
+        <footer>This is an automated security message from Store.<br>Never share your verification code with anyone.</footer>
+      </section>
+    </main>
+    <script src="preview.js"></script>
+  </body>
+</html>

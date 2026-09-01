@@ -1,19 +1,20 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
 import 'package:store/pages/auth/verify_phone.dart';
 
-class AddPhone extends StatefulWidget {
+class AddPhone extends ConsumerStatefulWidget {
   const AddPhone({super.key});
 
   @override
-  State<AddPhone> createState() => _AddPhoneState();
+  ConsumerState<AddPhone> createState() => _AddPhoneState();
 }
 
-class _AddPhoneState extends State<AddPhone> {
+class _AddPhoneState extends ConsumerState<AddPhone> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _phoneFocusNode = FocusNode();
@@ -97,6 +98,12 @@ class _AddPhoneState extends State<AddPhone> {
     }
 
     return '🌍';
+  }
+
+  void _confirmPhone(String phoneNumber) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const VerifyPhone()),
+    );
   }
 
   void _showConfirmationDialog(String phoneNumber) {
@@ -205,11 +212,7 @@ class _AddPhoneState extends State<AddPhone> {
                           fontWeight: FontWeight.w500,
                           onPressed: () {
                             Navigator.of(context).pop();
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const VerifyPhone(),
-                              ),
-                            );
+                            _confirmPhone(phoneNumber);
                           },
                           color: AppColors.buttonPrimary,
                           width: 168,

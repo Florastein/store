@@ -1,22 +1,28 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/mybutton.dart';
+import '../../../providers/repositories.dart';
+import '../../customer/dashboard.dart';
 
-class CreatePassword extends StatefulWidget {
+class CreatePassword extends ConsumerStatefulWidget {
   const CreatePassword({super.key});
 
   @override
-  State<CreatePassword> createState() => _CreatePasswordState();
+  ConsumerState<CreatePassword> createState() => _CreatePasswordState();
 }
 
-class _CreatePasswordState extends State<CreatePassword> {
+class _CreatePasswordState extends ConsumerState<CreatePassword> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _verifyPasswordController = TextEditingController();
   final _passwordFocusNode = FocusNode();
   final _verifyPasswordFocusNode = FocusNode();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -48,17 +54,75 @@ class _CreatePasswordState extends State<CreatePassword> {
     setState(() {});
   }
 
-  void _onNextPressed() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Account registration complete!',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: AppColors.success,
-        ),
+  void _snack(String message, Color color) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message, style: GoogleFonts.poppins()), backgroundColor: color));
+  }
+
+  Future<void> _onNextPressed() async {
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString('customer_name');
+      final email = prefs.getString('customer_email')?.trim();
+      final businessName = prefs.getString('shop_name');
+
+      if (name == null || email == null) {
+        _snack(
+          'Missing account details. Please go back and try again.',
+          AppColors.error,
+        );
+        return;
+      }
+
+      await ref
+          .read(authRepositoryProvider)
+          .signUpWithEmail(
+            email: email,
+            password: _passwordController.text,
+            name: '$name${businessName == null ? '' : ' ($businessName)'}',
+          );
+      if (!mounted) {
+        return;
+      }
+      _snack('Account registration complete!', AppColors.success);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const CustomerDashboard()),
+        (route) => false,
       );
+    } catch (e) {
+      String message = 'Something went wrong. Please try again.';
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'email-already-in-use':
+            message = 'An account with this email already exists.';
+            break;
+          case 'invalid-email':
+            message = 'Please enter a valid email address.';
+            break;
+          case 'weak-password':
+            message = 'The password is too weak.';
+            break;
+        }
+      }
+      _snack(message, AppColors.error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

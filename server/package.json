@@ -1,0 +1,21 @@
+{
+  "name": "store-otp-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker that sends email OTP codes using EmailJS",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@emailjs/nodejs": "^5.0.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260901.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.127.1"
+  }
+}

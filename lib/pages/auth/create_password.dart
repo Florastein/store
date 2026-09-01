@@ -1,18 +1,24 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:store/pages/auth/add_phone.dart';
 import 'package:store/theme/app_colors.dart';
 import 'package:store/widgets/mybutton.dart';
+import '../../providers/repositories.dart';
 
-class CreatePassword extends StatefulWidget {
-  const CreatePassword({super.key});
+class CreatePassword extends ConsumerStatefulWidget {
+  const CreatePassword({super.key, this.name, this.email});
+
+  final String? name;
+  final String? email;
 
   @override
-  State<CreatePassword> createState() => _CreatePasswordState();
+  ConsumerState<CreatePassword> createState() => _CreatePasswordState();
 }
 
-class _CreatePasswordState extends State<CreatePassword> {
+class _CreatePasswordState extends ConsumerState<CreatePassword> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _verifyPasswordController = TextEditingController();
@@ -20,6 +26,7 @@ class _CreatePasswordState extends State<CreatePassword> {
   final _verifyPasswordFocusNode = FocusNode();
   bool _isPasswordObscured = true;
   bool _isVerifyPasswordObscured = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -51,12 +58,72 @@ class _CreatePasswordState extends State<CreatePassword> {
     setState(() {});
   }
 
-  void _onNextPressed() {
-    if (_formKey.currentState!.validate()) {
+  void _snack(String message, Color color) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message, style: GoogleFonts.poppins()), backgroundColor: color));
+  }
+
+  void _showError(Object error) {
+    String message = 'Something went wrong. Please try again.';
+    if (error is FirebaseException) {
+      switch (error.code) {
+        case 'email-already-in-use':
+          message = 'An account with this email already exists.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'weak-password':
+          message = 'The password is too weak.';
+          break;
+      }
+    }
+    _snack(message, AppColors.error);
+  }
+
+  Future<void> _onNextPressed() async {
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final name = widget.name;
+    final email = widget.email;
+    if (name == null || email == null) {
+      _snack('Missing account details. Please go back and try again.', AppColors.error);
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .signUpWithEmail(
+            email: email,
+            password: _passwordController.text,
+            name: name,
+          );
+      if (!mounted) {
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const AddPhone()),
       );
+    } catch (e) {
+      _showError(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

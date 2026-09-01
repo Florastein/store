@@ -1,20 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'create_password.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/mybutton.dart';
 import 'login/login.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class CreateAccount extends StatefulWidget {
+class CreateAccount extends ConsumerStatefulWidget {
   const CreateAccount({super.key});
 
   @override
-  State<CreateAccount> createState() => _CreateAccountState();
+  ConsumerState<CreateAccount> createState() => _CreateAccountState();
 }
 
-class _CreateAccountState extends State<CreateAccount> {
+class _CreateAccountState extends ConsumerState<CreateAccount> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -53,14 +53,17 @@ class _CreateAccountState extends State<CreateAccount> {
 
   void _onNextPressed() async {
     if (_formKey.currentState!.validate()) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('customer_name', _nameController.text.trim());
-      if (!mounted) {
-        return;
-      }
+      FocusManager.instance.primaryFocus?.unfocus();
       Navigator.of(
         context,
-      ).push(MaterialPageRoute(builder: (context) => const CreatePassword()));
+      ).push(
+        MaterialPageRoute(
+          builder: (context) => CreatePassword(
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+          ),
+        ),
+      );
     }
   }
 

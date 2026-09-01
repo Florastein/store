@@ -1,0 +1,7 @@
+# Copy this file to `.dev.vars` and fill in your EmailJS credentials.
+# `.dev.vars` is used by `wrangler dev` for local development and must NOT be committed.
+
+EMAILJS_SERVICE_ID=YOUR_SERVICE_ID
+EMAILJS_TEMPLATE_ID=YOUR_TEMPLATE_ID
+EMAILJS_PUBLIC_KEY=YOUR_PUBLIC_KEY
+EMAILJS_PRIVATE_KEY=YOUR_PRIVATE_KEY

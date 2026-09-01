@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "570812313100",
+    "project_id": "yeah-c6ebc",
+    "storage_bucket": "yeah-c6ebc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:570812313100:android:e681e2e1c5d6986c3f8829",
+        "android_client_info": {
+          "package_name": "com.cadmil.store"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "570812313100-i7lfjjsgjelp4rvg6fpvf0ec7nsgj5ef.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJcg0su6wmipFFI78-FGGDsN2j2RnLTv4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "570812313100-i7lfjjsgjelp4rvg6fpvf0ec7nsgj5ef.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "570812313100-tndo90n7qkk6abi1tdv5fkqpekcdjp9k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cadmil.store"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
